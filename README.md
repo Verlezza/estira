@@ -13,9 +13,11 @@ It is not a workout app. It helps people who spend all day in front of a screen 
 - **Guided breaks.** 2 to 6 animated stretches with steps and a countdown. Stretches done on both sides repeat with the animation mirrored.
 - **29 stretches** for the neck, shoulders, upper and lower back, wrists, hips and legs, and eyes (20-20-20 rule).
 - **Discreet mode.** If you work in a shared office, it favors stretches that don't draw attention.
+- **Knows when you're away or busy.** If you haven't touched the mouse or keyboard for 5 minutes (or the screen is locked), the countdown restarts: you already moved. During a call (microphone or camera in use), full screen or a presentation, it waits until you're done, up to 30 minutes.
+- **Automatic updates.** When a new version is published, Estira offers to install it.
 - **System tray.** Closing the window keeps Estira in the tray. It can start automatically with Windows.
 - **English and Spanish.** Uses your Windows language (English unless it is Spanish), and you can change it in Settings.
-- **Lightweight.** It uses the WebView2 runtime that comes with Windows, so the installer is about 1 MB.
+- **Lightweight.** It uses the WebView2 runtime that comes with Windows, so the installer is under 2 MB.
 
 The animations are not images or videos: a figure is drawn in code from joint angles (see [`src/figure.js`](src/figure.js)).
 
@@ -47,7 +49,9 @@ To work only on the interface you don't need Rust: serve the `src` folder with a
 
 1. Update the version in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`.
 2. Create and push a tag: `git tag v0.3.0 && git push --tags`.
-3. GitHub Actions builds the installer and publishes it in Releases.
+3. GitHub Actions builds and signs the installer, publishes it in Releases and generates `latest.json`, which installed copies use to update themselves.
+
+The updates are signed. The repository needs the secret `TAURI_SIGNING_PRIVATE_KEY` (Settings → Secrets and variables → Actions) with the private key created by `npx tauri signer generate`. If the key has a password, also add `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. The matching public key is in `src-tauri/tauri.conf.json`. Never commit the private key, and don't lose it: without it, installed copies can't receive updates.
 
 ## Project structure
 

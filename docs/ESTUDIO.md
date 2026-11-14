@@ -102,7 +102,7 @@ Otras opciones: *Pausa Activa* (el término que se usa en Colombia y México par
 |---|---|---|
 | Alta | Revisión del catálogo por fisioterapia | Confianza en el contenido |
 | Alta | Firmar el instalador (por ejemplo, con SignPath, gratis para proyectos libres) | Evita el aviso de SmartScreen |
-| Media | Detectar inactividad (pantalla bloqueada o sin usar el mouse) y reiniciar el contador | Si estuviste fuera 30 minutos, ya te moviste |
+| Hecho (v0.3.0) | Detectar inactividad, llamadas y pantalla completa; actualizaciones automáticas | Menos interrupciones y versiones al día |
 | Media | Horario laboral (no recordar de noche ni el fin de semana) | Menos interrupciones innecesarias |
 | Media | Versión en inglés | Más alcance en GitHub |
 | Baja | Historial semanal | Motivación |

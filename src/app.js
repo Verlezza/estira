@@ -23,7 +23,7 @@ const optLabel = (q, key) => q.key === 'zones' ? t('zones')[key] : t(key);
 const SIZES = { short: 2, medium: 4, long: 6 };
 const RANK = { sit: 0, stand: 1, room: 2 };
 let profile = store.get('profile', null);
-let nextAt = 0, paused = false, stopAnim = null;
+let nextAt = 0, paused = false, busy = false, stopAnim = null;
 
 // ---------- Pantallas ----------
 let screen = '', backTo = 'home';
@@ -113,7 +113,7 @@ function pickRoutine(p) {
 // ---------- Temporizador ----------
 // ponytail: el temporizador vive en la página; con la ventana oculta, WebView2 puede retrasar los timers
 // hasta ~1 minuto. Para recordatorios de 30-90 minutos es suficiente; si hace falta precisión, moverlo a Rust.
-function restartTimer(min = profile.every) { nextAt = Date.now() + min * 60000; paused = false; }
+function restartTimer(min = profile.every) { nextAt = Date.now() + min * 60000; paused = false; busy = false; }
 const fmt = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 const clock = t => new Date(t).toLocaleTimeString(LANG, { hour: '2-digit', minute: '2-digit' });
 const today = () => new Date().toLocaleDateString('sv');
@@ -121,18 +121,38 @@ const today = () => new Date().toLocaleDateString('sv');
 function renderHome() {
   if (!profile) return;
   const left = nextAt - Date.now(), total = (paused ? 60 : profile.every) * 60000;
-  $('#home-label').textContent = t(paused ? 'paused_until' : 'next_break_in');
-  $('#home-time').textContent = fmt(left);
+  $('#home-label').textContent = t(busy ? 'busy_wait' : paused ? 'paused_until' : 'next_break_in');
+  $('#home-time').textContent = busy ? '…' : fmt(left);
   $('#ring-bar').style.strokeDashoffset = 100 - Math.min(100, Math.max(0, left / total * 100));
   const st = store.get('stats', {}), n = st.date === today() ? st.count : 0;
   $('#home-today').textContent = n ? t('today_n', n) : t('today_none');
   $('#pause').textContent = t(paused ? 'resume' : 'pause_hour');
 }
 
-setInterval(() => {
-  if (!profile) return;
+// Estado del sistema (solo en la app de escritorio): tiempo sin usar la PC y si hay llamada o pantalla completa.
+const AWAY_SECS = 5 * 60;
+const MAX_BUSY_WAIT = 30 * 60000; // si sigues ocupado más de 30 min (p. ej. en un canal de voz todo el día), avisa igual
+const sysStatus = () => invoke ? invoke('status').catch(() => ({ idle: 0, busy: false })) : Promise.resolve({ idle: 0, busy: false });
+
+let checking = false, lastIdleCheck = 0, busySince = 0;
+setInterval(async () => {
+  if (!profile || checking) return;
   if (screen === 'home') renderHome();
-  if (Date.now() >= nextAt && !['remind', 'session', 'done', 'quiz'].includes(screen)) remind();
+  const due = Date.now() >= nextAt, free = !['remind', 'session', 'done', 'quiz'].includes(screen);
+  // Se consulta el sistema al vencer el tiempo (luego cada 30 s si sigues ocupado) y cada 30 s para ver si estás fuera.
+  if (!(due && free && !busy) && Date.now() - lastIdleCheck < 30000) return;
+  checking = true; lastIdleCheck = Date.now();
+  try {
+    const st = await sysStatus();
+    // Si estuviste fuera 5 minutos o más (o con la pantalla bloqueada), ya te moviste: el contador vuelve a empezar.
+    if (st.idle >= AWAY_SECS && free && !paused) { restartTimer(); return; }
+    if (due && free) {
+      // En llamada o pantalla completa: se espera a que termine, hasta un máximo de 30 minutos.
+      if (st.busy && !busy) busySince = Date.now();
+      busy = st.busy && Date.now() - busySince < MAX_BUSY_WAIT;
+      if (!busy) remind();
+    }
+  } finally { checking = false; }
 }, 1000);
 
 // ---------- Ventana (solo dentro de la app de escritorio) ----------
@@ -146,6 +166,20 @@ async function setAutostart(on) {
   try { await invoke(on ? 'plugin:autostart|enable' : 'plugin:autostart|disable'); } catch (e) { console.error(e); }
 }
 TAURI?.event.listen('stretch-now', () => { if (profile && screen !== 'session') remind(); });
+invoke?.('tray_labels', { open: t('tray_open'), now: t('stretch_now'), quit: t('tray_quit') }).catch(() => {});
+
+// ---------- Actualizaciones ----------
+async function checkUpdate() {
+  const v = await invoke?.('check_update').catch(() => null);
+  if (!v) return;
+  $('#update-text').textContent = t('update_available', v);
+  $('#update').hidden = false;
+}
+$('#update-btn').onclick = async () => {
+  $('#update-btn').disabled = true; $('#update-btn').textContent = t('updating');
+  try { await invoke('install_update'); } catch (e) { console.error(e); $('#update-btn').textContent = t('update_failed'); }
+};
+if (invoke) { setTimeout(checkUpdate, 10000); setInterval(checkUpdate, 12 * 3600000); }
 
 function chime() {
   if (!profile?.sound) return;
