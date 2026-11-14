@@ -18,7 +18,7 @@ Las animaciones no son imágenes ni videos: una figura se dibuja con código a p
 
 ## Instalar
 
-1. Ve a [Releases](../../releases) y descarga `Estira_x.y.z_x64-setup.exe`.
+1. Descarga el instalador desde la [última versión](https://github.com/Verlezza/estira/releases/latest): es el archivo `Estira_x.y.z_x64-setup.exe`.
 2. Ábrelo. Se instala solo para tu usuario y no pide permisos de administrador.
 
 Windows puede mostrar el aviso "Windows protegió su PC" porque el instalador aún no está firmado. Haz clic en **Más información → Ejecutar de todas formas**.
@@ -43,7 +43,7 @@ Para trabajar solo en la interfaz no necesitas Rust: sirve la carpeta `src` con 
 
 1. Cambia la versión en `package.json`, `src-tauri/Cargo.toml` y `src-tauri/tauri.conf.json`.
 2. Crea y sube una etiqueta: `git tag v0.2.0 && git push --tags`.
-3. GitHub Actions compila el instalador y deja un borrador en Releases. Revísalo y publícalo.
+3. GitHub Actions compila el instalador y lo publica en Releases.
 
 ## Estructura
 
