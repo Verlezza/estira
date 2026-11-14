@@ -5,6 +5,7 @@
   "description": "Recordatorios de pausas activas con estiramientos guiados para quienes pasan el día frente a la computadora.",
   "license": "MIT",
   "scripts": {
+    "tauri": "tauri",
     "dev": "tauri dev",
     "build": "tauri build",
     "icon": "tauri icon src-tauri/icons/icon.svg",
