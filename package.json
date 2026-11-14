@@ -1,0 +1,16 @@
+{
+  "name": "estira",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Recordatorios de pausas activas con estiramientos guiados para quienes pasan el día frente a la computadora.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "icon": "tauri icon src-tauri/icons/icon.svg",
+    "test": "node tests/catalog.test.js"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.4"
+  }
+}

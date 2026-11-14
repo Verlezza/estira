@@ -1,0 +1,22 @@
+[package]
+name = "estira"
+version = "0.1.0"
+description = "Pausas activas con estiramientos guiados"
+license = "MIT"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-autostart = "2"
+tauri-plugin-single-instance = "2"
+
+# Binario pequeño: el objetivo es un instalador ligero.
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Estira</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <section id="quiz" hidden>
+    <div class="progress" aria-hidden="true"><i id="quiz-bar"></i></div>
+    <div id="quiz-body" class="grow"></div>
+  </section>
+
+  <section id="home" hidden>
+    <header class="top">
+      <h1>Estira</h1>
+      <button class="ghost" id="go-settings">Ajustes</button>
+    </header>
+    <div class="ring">
+      <svg viewBox="0 0 120 120" aria-hidden="true">
+        <circle class="track" cx="60" cy="60" r="52"/>
+        <circle class="bar" id="ring-bar" cx="60" cy="60" r="52" pathLength="100"/>
+      </svg>
+      <div class="ring-text"><small id="home-label">Próxima pausa en</small><strong id="home-time">--:--</strong></div>
+    </div>
+    <p class="muted center" id="home-today"></p>
+    <div class="grow"></div>
+    <button class="primary" id="now">Estirar ahora</button>
+    <div class="row">
+      <button id="pause">Pausar 1 hora</button>
+      <button id="go-catalog">Ver estiramientos</button>
+    </div>
+  </section>
+
+  <section id="remind" hidden>
+    <div class="grow"></div>
+    <h2 class="big">Hora de estirar</h2>
+    <p class="muted" id="remind-sub"></p>
+    <ul class="pills" id="remind-list"></ul>
+    <div class="grow"></div>
+    <button class="primary" id="start">Empezar</button>
+    <div class="row">
+      <button id="snooze">En 10 minutos</button>
+      <button id="skip">Saltar esta vez</button>
+    </div>
+  </section>
+
+  <section id="session" hidden>
+    <div class="dots" id="dots" aria-hidden="true"></div>
+    <svg class="anim" id="anim" role="img" aria-label="Animación del estiramiento"></svg>
+    <p class="side" id="side"></p>
+    <h2 id="ex-name"></h2>
+    <ol class="steps" id="ex-steps"></ol>
+    <p class="caution" id="ex-caution"></p>
+    <div class="grow"></div>
+    <div class="count"><div class="track"><i id="count-bar"></i></div><span id="count-num" aria-live="off"></span></div>
+    <div class="row">
+      <button id="hold">Pausar</button>
+      <button class="primary" id="next">Siguiente</button>
+    </div>
+    <button class="link" id="end">Terminar la pausa</button>
+  </section>
+
+  <section id="done" hidden>
+    <div class="grow"></div>
+    <h2 class="big">¡Bien hecho!</h2>
+    <p class="muted" id="done-next"></p>
+    <p class="tip" id="done-tip"></p>
+    <div class="grow"></div>
+    <button class="primary" id="done-close">Volver al trabajo</button>
+  </section>
+
+  <section id="catalog" hidden>
+    <header class="top">
+      <button class="ghost" data-back>← Volver</button>
+      <h1>Estiramientos</h1>
+    </header>
+    <p class="muted">Los marcados con ✓ entran en tus pausas según tus respuestas.</p>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section id="settings" hidden>
+    <header class="top">
+      <button class="ghost" data-back>← Volver</button>
+      <h1>Ajustes</h1>
+    </header>
+    <dl class="summary" id="summary"></dl>
+    <label class="check"><input type="checkbox" id="opt-sound"> Sonido al recordar</label>
+    <label class="check" id="autostart-row" hidden><input type="checkbox" id="opt-autostart"> Abrir Estira al iniciar Windows</label>
+    <div class="grow"></div>
+    <button class="primary" id="redo-quiz">Responder el cuestionario de nuevo</button>
+    <p class="muted small">Estira es software libre (MIT). No reemplaza la consulta con un profesional de la salud.</p>
+  </section>
+</main>
+
+<dialog id="detail">
+  <svg class="anim" id="detail-anim" role="img" aria-label="Animación del estiramiento"></svg>
+  <h2 id="detail-name"></h2>
+  <p class="muted" id="detail-meta"></p>
+  <ol class="steps" id="detail-steps"></ol>
+  <p class="caution" id="detail-caution"></p>
+  <form method="dialog"><button class="primary">Cerrar</button></form>
+</dialog>
+
+<script src="exercises.js"></script>
+<script src="figure.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+# Compila el instalador de Windows en GitHub y lo deja como borrador de release.
+# Se activa al subir una etiqueta como v0.1.0, o a mano desde la pestaña Actions.
+name: Instalador de Windows
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - run: npm ci
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: Estira v__VERSION__
+          releaseBody: Descarga el archivo `Estira_..._x64-setup.exe` de abajo y ábrelo para instalar.
+          releaseDraft: true
