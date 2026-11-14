@@ -14,6 +14,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; height: 100%; }
 body { background: var(--bg); color: var(--text); font: 15px/1.45 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; }
 main { height: 100%; }
@@ -98,6 +99,8 @@ dialog form button { flex: 1; }
 .summary dd { margin: 0; }
 .check { display: flex; align-items: center; gap: 10px; padding: 6px 2px; cursor: pointer; }
 .check input { width: 18px; height: 18px; accent-color: var(--accent); }
+.field { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 2px; }
+.field select { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; }
 
 /* Figura */
 .floor { stroke: var(--prop); stroke-width: 2; }

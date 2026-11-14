@@ -1,74 +1,81 @@
 # Estira
 
-Estira es una aplicación de escritorio, libre y gratuita, que te recuerda hacer pausas mientras trabajas en la computadora. En cada pausa te guía con estiramientos cortos y animados.
+**English** · [Español](README.es.md)
 
-No es una app de ejercicio. Sirve para que quienes pasan el día frente a la pantalla se muevan un poco cada cierto tiempo y eviten molestias en el cuello, la espalda y las muñecas.
+Estira is a free, open-source desktop app that reminds you to take breaks while you work at the computer. Each break guides you through short, animated stretches.
 
-## Qué hace
+It is not a workout app. It helps people who spend all day in front of a screen move a little every so often, to prevent neck, back and wrist discomfort.
 
-- **Cuestionario inicial.** Pregunta cuánto espacio tienes, si puedes usar el piso, qué tienes a mano (silla firme, escritorio, pared, toalla, pelota) y dónde sientes tensión. Con eso elige los estiramientos que puedes hacer.
-- **Recordatorios.** Cada 30, 45, 60 o 90 minutos la ventana aparece encima de todo con un sonido suave. Puedes empezar, posponer 10 minutos o saltar esa pausa.
-- **Pausas guiadas.** De 2 a 6 estiramientos con animación, pasos y cuenta regresiva. Los que se hacen de los dos lados se repiten con la animación reflejada.
-- **29 estiramientos** para cuello, hombros, espalda alta y baja, muñecas, cadera y piernas, y ojos (regla 20-20-20).
-- **Modo discreto.** Si trabajas en una oficina compartida, prioriza los estiramientos que no llaman la atención.
-- **Bandeja del sistema.** Al cerrar la ventana, Estira sigue en la bandeja. Puede abrirse sola al iniciar Windows.
-- **Ligera.** Usa el WebView2 que ya trae Windows, así que el instalador pesa pocos megas.
+## Features
 
-Las animaciones no son imágenes ni videos: una figura se dibuja con código a partir de ángulos de articulaciones (ver [`src/figure.js`](src/figure.js)).
+- **Setup questionnaire.** Asks how much space you have, whether you can use the floor, what you have at hand (sturdy chair, desk, wall, towel, ball) and where you feel tension. It uses your answers to pick the stretches you can do.
+- **Reminders.** Every 30, 45, 60 or 90 minutes the window pops up on top with a soft chime. You can start, snooze for 10 minutes or skip that break.
+- **Guided breaks.** 2 to 6 animated stretches with steps and a countdown. Stretches done on both sides repeat with the animation mirrored.
+- **29 stretches** for the neck, shoulders, upper and lower back, wrists, hips and legs, and eyes (20-20-20 rule).
+- **Discreet mode.** If you work in a shared office, it favors stretches that don't draw attention.
+- **System tray.** Closing the window keeps Estira in the tray. It can start automatically with Windows.
+- **English and Spanish.** Uses your Windows language (English unless it is Spanish), and you can change it in Settings.
+- **Lightweight.** It uses the WebView2 runtime that comes with Windows, so the installer is about 1 MB.
 
-## Instalar
+The animations are not images or videos: a figure is drawn in code from joint angles (see [`src/figure.js`](src/figure.js)).
 
-1. Descarga el instalador desde la [última versión](https://github.com/Verlezza/estira/releases/latest): es el archivo `Estira_x.y.z_x64-setup.exe`.
-2. Ábrelo. Se instala solo para tu usuario y no pide permisos de administrador.
+## Install
 
-Windows puede mostrar el aviso "Windows protegió su PC" porque el instalador aún no está firmado. Haz clic en **Más información → Ejecutar de todas formas**.
+1. Download the installer from the [latest release](https://github.com/Verlezza/estira/releases/latest): the file `Estira_x.y.z_x64-setup.exe`.
+2. Open it. It installs for your user only and doesn't need administrator rights.
 
-## Desarrollo
+Windows may show "Windows protected your PC" because the installer isn't signed yet. Click **More info → Run anyway**.
 
-Necesitas:
+## Development
 
-- [Node.js](https://nodejs.org/) 20 o más reciente
+You need:
+
+- [Node.js](https://nodejs.org/) 20 or newer
 - [Rust](https://rustup.rs/)
-- Visual Studio Build Tools con "Desarrollo para el escritorio con C++"
+- Visual Studio Build Tools with "Desktop development with C++"
 
 ```bash
 npm install
-npm run dev     # abre la app en modo desarrollo
-npm run build   # genera el instalador en src-tauri/target/release/bundle/nsis/
+npm run dev     # opens the app in development mode
+npm run build   # builds the installer in src-tauri/target/release/bundle/nsis/
+npm test        # checks the stretch catalog and translations
 ```
 
-Para trabajar solo en la interfaz no necesitas Rust: sirve la carpeta `src` con cualquier servidor estático (por ejemplo `python -m http.server -d src`) y ábrela en el navegador. Sin Tauri, la ventana no se pone al frente ni hay bandeja, pero todo lo demás funciona.
+To work only on the interface you don't need Rust: serve the `src` folder with any static server (for example `python -m http.server -d src`) and open it in the browser. Without Tauri the window won't come to the front and there's no tray, but everything else works.
 
-### Publicar una versión
+### Publishing a version
 
-1. Cambia la versión en `package.json`, `src-tauri/Cargo.toml` y `src-tauri/tauri.conf.json`.
-2. Crea y sube una etiqueta: `git tag v0.2.0 && git push --tags`.
-3. GitHub Actions compila el instalador y lo publica en Releases.
+1. Update the version in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`.
+2. Create and push a tag: `git tag v0.3.0 && git push --tags`.
+3. GitHub Actions builds the installer and publishes it in Releases.
 
-## Estructura
+## Project structure
 
 ```
-src/                 Interfaz (HTML, CSS y JavaScript sin frameworks)
-  app.js             Cuestionario, temporizador, pausas, catálogo y ajustes
-  exercises.js       Catálogo de estiramientos
-  figure.js          Motor de la figura animada
-src-tauri/           Envoltura de escritorio (Rust): bandeja, autoarranque, instalador
-tests/               Revisión automática del catálogo (npm test)
-docs/ESTUDIO.md      Investigación y decisiones del proyecto
+src/                 Interface (plain HTML, CSS and JavaScript, no frameworks)
+  app.js             Questionnaire, timer, breaks, catalog and settings
+  exercises.js       Stretch catalog (Spanish source)
+  i18n.js            Spanish and English texts, language detection
+  figure.js          Animated figure engine
+src-tauri/           Desktop shell (Rust): tray, autostart, installer
+tests/               Automatic catalog check (npm test)
+docs/ESTUDIO.md      Research and project decisions (in Spanish)
 ```
 
-## Agregar un estiramiento
+The code comments and project docs are in Spanish.
 
-Agrega un objeto a `EXERCISES` en [`src/exercises.js`](src/exercises.js). Los campos están explicados al inicio del archivo. La animación se define con poses: cada pose cambia solo los ángulos que se mueven respecto a la escena base (`sit-front`, `sit-side`, `stand-front`, `stand-side` o `floor-side`). La convención de ángulos está al inicio de [`src/figure.js`](src/figure.js).
+## Adding a stretch
 
-Para revisar el resultado, ejecuta `npm test`, abre la app, ve a **Ver estiramientos** y toca el tuyo.
+Add an object to `EXERCISES` in [`src/exercises.js`](src/exercises.js) and its translation to `EXERCISES_EN` in [`src/i18n.js`](src/i18n.js). The fields are described at the top of the file. The animation is a list of poses: each pose only changes the angles that move relative to the base scene (`sit-front`, `sit-side`, `stand-front`, `stand-side` or `floor-side`). The angle convention is described at the top of [`src/figure.js`](src/figure.js).
 
-Antes de proponer uno nuevo, comprueba que sea un estiramiento suave, seguro para la mayoría de las personas y que se pueda hacer con ropa de oficina.
+To check the result, run `npm test`, open the app, go to **See stretches** and tap yours.
 
-## Aviso
+A new stretch should be gentle, safe for most people and doable in office clothes.
 
-Estira no da consejo médico. Si tienes una lesión, dolor fuerte, hormigueo o una condición médica, consulta a un profesional de la salud antes de hacer estiramientos.
+## Disclaimer
 
-## Licencia
+Estira does not give medical advice. If you have an injury, strong pain, tingling or a medical condition, check with a health professional before stretching.
+
+## License
 
 [MIT](LICENSE)

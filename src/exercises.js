@@ -5,11 +5,7 @@
 //   discreet: se puede hacer en una oficina compartida sin llamar la atención
 //   secs:   segundos por lado; sides: true repite del otro lado (la animación se refleja)
 //   frames: poses de la animación (ver figure.js); h = segundos que se mantiene cada pose
-
-const ZONES = {
-  cuello: 'Cuello', hombros: 'Hombros', espalda_alta: 'Espalda alta', espalda_baja: 'Espalda baja',
-  munecas: 'Muñecas y manos', piernas: 'Cadera y piernas', ojos: 'Ojos',
-};
+// Los nombres de las zonas y las traducciones al inglés están en i18n.js.
 
 const EXERCISES = [
   {

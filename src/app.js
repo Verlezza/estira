@@ -9,29 +9,19 @@ const store = {
 };
 
 const QUIZ = [
-  { key: 'place', q: '¿Dónde trabajas casi siempre?', hint: 'En una oficina compartida priorizamos estiramientos discretos.',
-    opts: [['home', 'En casa o en un espacio privado'], ['office', 'En una oficina compartida o coworking']] },
-  { key: 'space', q: '¿Cuánto espacio tienes alrededor?',
-    opts: [['sit', 'Solo mi silla'], ['stand', 'Puedo ponerme de pie junto al escritorio'], ['room', 'Tengo espacio para estirar los brazos y moverme']] },
-  { key: 'floor', q: '¿Puedes hacer estiramientos en el piso?', when: a => a.space === 'room',
-    opts: [[true, 'Sí, tengo un tapete o una alfombra'], [false, 'Prefiero no']] },
-  { key: 'props', multi: true, q: '¿Qué tienes a mano?', hint: 'Marca todo lo que tengas. Si no tienes nada, sigue igual.',
-    opts: [['chair', 'Una silla firme, sin ruedas'], ['desk', 'Un escritorio o una mesa firme'], ['wall', 'Una pared libre'],
-      ['towel', 'Una toalla, un cinturón o una banda'], ['ball', 'Una pelota pequeña (de tenis o de masaje)']] },
-  { key: 'zones', multi: true, q: '¿Dónde sientes más tensión?', hint: 'Daremos prioridad a esas zonas.', opts: Object.entries(ZONES) },
-  { key: 'every', q: '¿Cada cuánto quieres una pausa?',
-    opts: [[30, 'Cada 30 minutos'], [45, 'Cada 45 minutos (recomendado)'], [60, 'Cada hora'], [90, 'Cada hora y media']] },
-  { key: 'size', q: '¿Cuánto quieres que dure cada pausa?',
-    opts: [['short', 'Rápida: 2 estiramientos, 1 minuto'], ['medium', 'Normal: 4 estiramientos, unos 3 minutos'], ['long', 'Completa: 6 estiramientos, unos 5 minutos']] },
+  { key: 'place', q: 'q_place', hint: 'h_place', opts: [['home', 'o_home'], ['office', 'o_office']] },
+  { key: 'space', q: 'q_space', opts: [['sit', 'o_sit'], ['stand', 'o_stand'], ['room', 'o_room']] },
+  { key: 'floor', q: 'q_floor', when: a => a.space === 'room', opts: [[true, 'o_floor_yes'], [false, 'o_floor_no']] },
+  { key: 'props', multi: true, q: 'q_props', hint: 'h_props',
+    opts: [['chair', 'o_chair'], ['desk', 'o_desk'], ['wall', 'o_wall'], ['towel', 'o_towel'], ['ball', 'o_ball']] },
+  { key: 'zones', multi: true, q: 'q_zones', hint: 'h_zones', opts: Object.keys(t('zones')).map(z => [z, z]) },
+  { key: 'every', q: 'q_every', opts: [[30, 'o_30'], [45, 'o_45'], [60, 'o_60'], [90, 'o_90']] },
+  { key: 'size', q: 'q_size', opts: [['short', 'o_short'], ['medium', 'o_medium'], ['long', 'o_long']] },
 ];
+// Las opciones de zonas usan el nombre de la zona; las demás, una clave de texto.
+const optLabel = (q, key) => q.key === 'zones' ? t('zones')[key] : t(key);
 const SIZES = { short: 2, medium: 4, long: 6 };
 const RANK = { sit: 0, stand: 1, room: 2 };
-const TIPS = [
-  'Si puedes, levántate y camina un par de minutos.', 'Toma un vaso de agua.',
-  'Revisa tu postura: pies en el piso y la pantalla a la altura de los ojos.', 'Respira profundo tres veces antes de volver.',
-  'Relaja la mandíbula y deja caer los hombros.',
-];
-
 let profile = store.get('profile', null);
 let nextAt = 0, paused = false, stopAnim = null;
 
@@ -55,26 +45,20 @@ function startQuiz() {
     const list = steps();
     $('#quiz-bar').style.width = `${Math.max(0, (i + 1) / (list.length + 1)) * 100}%`;
     if (i === -1) {
-      body.innerHTML = `<p class="q-title">Hola, soy Estira</p>
-        <p>Te voy a recordar cada cierto tiempo que hagas una pausa y te guiaré con estiramientos cortos, pensados para quienes pasan el día frente a la computadora.</p>
-        <div class="note"><strong>Antes de empezar</strong><ul>
-          <li>Estira hasta sentir tensión suave, nunca dolor.</li>
-          <li>No rebotes y respira lento.</li>
-          <li>Si tienes una lesión, dolor fuerte, hormigueo o alguna condición médica, consulta antes a un profesional de la salud.</li>
-        </ul></div>
-        <p class="muted">Ahora unas preguntas rápidas para elegir los estiramientos que te sirven.</p>
-        <div class="grow"></div><button class="primary" id="q-next">Empezar</button>`;
+      body.innerHTML = `<p class="q-title">${t('hello')}</p><p>${t('intro')}</p>
+        <div class="note"><strong>${t('before')}</strong><ul><li>${t('rule1')}</li><li>${t('rule2')}</li><li>${t('rule3')}</li></ul></div>
+        <p class="muted">${t('quiz_intro')}</p>
+        <div class="grow"></div><button class="primary" id="q-next">${t('start')}</button>`;
       $('#q-next').onclick = () => { i++; render(); };
       return;
     }
     if (i >= list.length) {
       const n = EXERCISES.filter(e => eligible(e, answers)).length;
-      body.innerHTML = `<p class="q-title">Todo listo</p>
-        <p>Encontré <strong>${n} estiramientos</strong> que puedes hacer con lo que tienes. Te recordaré cada ${answers.every} minutos.</p>
-        <p class="muted">Puedes cambiar tus respuestas cuando quieras en Ajustes.</p>
-        ${invoke ? '<label class="check"><input type="checkbox" id="q-auto" checked> Abrir Estira al iniciar Windows</label>' : ''}
+      body.innerHTML = `<p class="q-title">${t('all_set')}</p><p>${t('found', n, answers.every)}</p>
+        <p class="muted">${t('change_later')}</p>
+        ${invoke ? `<label class="check"><input type="checkbox" id="q-auto" checked> ${t('autostart')}</label>` : ''}
         <div class="grow"></div>
-        <button class="primary" id="q-next">Comenzar</button><button class="link" id="q-back">Atrás</button>`;
+        <button class="primary" id="q-next">${t('begin')}</button><button class="link" id="q-back">${t('prev')}</button>`;
       $('#q-back').onclick = () => { i--; render(); };
       $('#q-next').onclick = () => {
         if ($('#q-auto')) setAutostart($('#q-auto').checked);
@@ -83,11 +67,11 @@ function startQuiz() {
       return;
     }
     const q = list[i], sel = v => q.multi ? answers[q.key].includes(v) : answers[q.key] === v;
-    body.innerHTML = `<p class="q-title">${q.q}</p>${q.hint ? `<p class="muted">${q.hint}</p>` : ''}
-      ${q.opts.map(([v, label], j) => `<button class="opt" data-j="${j}" aria-pressed="${sel(v)}">${label}</button>`).join('')}
+    body.innerHTML = `<p class="q-title">${t(q.q)}</p>${q.hint ? `<p class="muted">${t(q.hint)}</p>` : ''}
+      ${q.opts.map(([v, key], j) => `<button class="opt" data-j="${j}" aria-pressed="${sel(v)}">${optLabel(q, key)}</button>`).join('')}
       <div class="grow"></div>
-      ${q.multi ? '<button class="primary" id="q-next">Siguiente</button>' : ''}
-      <button class="link" id="q-back">Atrás</button>`;
+      ${q.multi ? `<button class="primary" id="q-next">${t('next')}</button>` : ''}
+      <button class="link" id="q-back">${t('prev')}</button>`;
     body.querySelectorAll('.opt').forEach(b => b.onclick = () => {
       const v = q.opts[b.dataset.j][0];
       if (q.multi) {
@@ -131,18 +115,18 @@ function pickRoutine(p) {
 // hasta ~1 minuto. Para recordatorios de 30-90 minutos es suficiente; si hace falta precisión, moverlo a Rust.
 function restartTimer(min = profile.every) { nextAt = Date.now() + min * 60000; paused = false; }
 const fmt = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
-const clock = t => new Date(t).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+const clock = t => new Date(t).toLocaleTimeString(LANG, { hour: '2-digit', minute: '2-digit' });
 const today = () => new Date().toLocaleDateString('sv');
 
 function renderHome() {
   if (!profile) return;
   const left = nextAt - Date.now(), total = (paused ? 60 : profile.every) * 60000;
-  $('#home-label').textContent = paused ? 'En pausa. Vuelvo en' : 'Próxima pausa en';
+  $('#home-label').textContent = t(paused ? 'paused_until' : 'next_break_in');
   $('#home-time').textContent = fmt(left);
   $('#ring-bar').style.strokeDashoffset = 100 - Math.min(100, Math.max(0, left / total * 100));
   const st = store.get('stats', {}), n = st.date === today() ? st.count : 0;
-  $('#home-today').textContent = n ? `Hoy llevas ${n} ${n === 1 ? 'pausa' : 'pausas'}.` : 'Aún no haces pausas hoy.';
-  $('#pause').textContent = paused ? 'Reanudar' : 'Pausar 1 hora';
+  $('#home-today').textContent = n ? t('today_n', n) : t('today_none');
+  $('#pause').textContent = t(paused ? 'resume' : 'pause_hour');
 }
 
 setInterval(() => {
@@ -182,8 +166,8 @@ let routine = [];
 function remind() {
   routine = pickRoutine(profile);
   const secs = routine.reduce((s, e) => s + e.secs * (e.sides ? 2 : 1), 0);
-  $('#remind-sub').textContent = `Llevas un rato frente a la pantalla. Esta pausa toma unos ${Math.max(1, Math.round(secs / 60))} min.`;
-  $('#remind-list').innerHTML = routine.map(e => `<li>${e.name}</li>`).join('');
+  $('#remind-sub').textContent = t('remind_sub', Math.max(1, Math.round(secs / 60)));
+  $('#remind-list').innerHTML = routine.map(e => `<li>${exText(e).name}</li>`).join('');
   show('remind'); surface(); chime();
 }
 $('#now').onclick = remind;
@@ -195,7 +179,7 @@ $('#pause').onclick = () => { paused ? restartTimer() : (restartTimer(60), pause
 let tick = null;
 function runSession() {
   const plan = routine.flatMap(ex => ex.sides
-    ? [{ ex, mirror: false, side: 'Primer lado' }, { ex, mirror: true, side: 'Segundo lado' }]
+    ? [{ ex, mirror: false, side: t('side1') }, { ex, mirror: true, side: t('side2') }]
     : [{ ex, mirror: false, side: '' }]);
   let i = 0, left = 0, holding = false;
   $('#dots').innerHTML = routine.map(() => '<i></i>').join('');
@@ -203,13 +187,14 @@ function runSession() {
     const { ex, mirror, side } = plan[i];
     stopAnim?.(); stopAnim = animateExercise($('#anim'), ex, mirror);
     $('#side').textContent = side;
-    $('#ex-name').textContent = ex.name;
-    $('#ex-steps').innerHTML = ex.steps.map(s => `<li>${s}</li>`).join('');
-    $('#ex-caution').textContent = ex.caution || '';
+    const tx = exText(ex);
+    $('#ex-name').textContent = tx.name;
+    $('#ex-steps').innerHTML = tx.steps.map(s => `<li>${s}</li>`).join('');
+    $('#ex-caution').textContent = tx.caution || '';
     const idx = routine.indexOf(ex);
     $('#dots').querySelectorAll('i').forEach((d, j) => d.classList.toggle('on', j <= idx));
-    $('#next').textContent = i === plan.length - 1 ? 'Terminar' : 'Siguiente';
-    left = ex.secs; holding = false; $('#hold').textContent = 'Pausar';
+    $('#next').textContent = t(i === plan.length - 1 ? 'finish' : 'next');
+    left = ex.secs; holding = false; $('#hold').textContent = t('pause');
     paint();
   };
   const paint = () => {
@@ -224,7 +209,7 @@ function runSession() {
     if (left <= 0) { chime(); next(); }
   }, 1000);
   $('#next').onclick = next;
-  $('#hold').onclick = () => { holding = !holding; $('#hold').textContent = holding ? 'Seguir' : 'Pausar'; };
+  $('#hold').onclick = () => { holding = !holding; $('#hold').textContent = t(holding ? 'go_on' : 'pause'); };
   $('#end').onclick = () => finish(false);
   show('session'); load();
 }
@@ -236,8 +221,9 @@ function finish(completed) {
     const st = store.get('stats', {});
     store.set('stats', { date: today(), count: (st.date === today() ? st.count : 0) + 1 });
   }
-  $('#done-next').textContent = `Tu próxima pausa es a las ${clock(nextAt)}.`;
-  $('#done-tip').textContent = TIPS[Math.floor(Math.random() * TIPS.length)];
+  $('#done-next').textContent = t('next_at', clock(nextAt));
+  const tips = t('tips');
+  $('#done-tip').textContent = tips[Math.floor(Math.random() * tips.length)];
   show('done');
 }
 $('#done-close').onclick = () => { show('home'); toTray(); };
@@ -250,7 +236,7 @@ $('#go-catalog').onclick = () => {
     const ok = eligible(ex, profile);
     const b = document.createElement('button');
     b.className = `card ${ok ? 'on' : 'off'}`;
-    b.innerHTML = `<svg aria-hidden="true"></svg><span>${ex.name}</span>`;
+    b.innerHTML = `<svg aria-hidden="true"></svg><span>${exText(ex).name}</span>`;
     animateExercise(b.querySelector('svg'), ex, false, true);
     b.onclick = () => openDetail(ex);
     grid.append(b);
@@ -261,23 +247,28 @@ $('#go-catalog').onclick = () => {
 function openDetail(ex) {
   const d = $('#detail');
   stopAnim?.(); stopAnim = animateExercise($('#detail-anim'), ex);
-  $('#detail-name').textContent = ex.name;
-  const req = { sit: 'En la silla', stand: 'De pie', room: 'Con espacio' }[ex.pos] + (ex.floor ? ', en el piso' : '');
-  $('#detail-meta').textContent = `${ex.zones.map(z => ZONES[z]).join(' · ')} — ${req} — ${ex.secs} s${ex.sides ? ' por lado' : ''}`;
-  $('#detail-steps').innerHTML = ex.steps.map(s => `<li>${s}</li>`).join('');
-  $('#detail-caution').textContent = ex.caution || '';
+  const tx = exText(ex);
+  $('#detail-name').textContent = tx.name;
+  const req = t('pos_' + ex.pos) + (ex.floor ? t('on_floor') : '');
+  $('#detail-meta').textContent = `${ex.zones.map(z => t('zones')[z]).join(' · ')} — ${req} — ${ex.secs} s${ex.sides ? t('per_side') : ''}`;
+  $('#detail-steps').innerHTML = tx.steps.map(s => `<li>${s}</li>`).join('');
+  $('#detail-caution').textContent = tx.caution || '';
   d.onclose = () => { stopAnim?.(); stopAnim = null; };
   d.showModal();
 }
 
 // ---------- Ajustes ----------
 $('#go-settings').onclick = async () => {
-  const label = k => QUIZ.find(q => q.key === k).opts;
-  const one = k => label(k).find(([v]) => v === profile[k])?.[1] ?? '—';
-  const many = k => label(k).filter(([v]) => profile[k].includes(v)).map(o => o[1]).join(', ') || 'Nada';
-  $('#summary').innerHTML = `<dt>Lugar</dt><dd>${one('place')}</dd><dt>Espacio</dt><dd>${one('space')}${profile.space === 'room' ? (profile.floor ? ', con piso' : ', sin piso') : ''}</dd>
-    <dt>A mano</dt><dd>${many('props')}</dd><dt>Zonas</dt><dd>${many('zones')}</dd>
-    <dt>Frecuencia</dt><dd>${one('every')}</dd><dt>Duración</dt><dd>${one('size')}</dd>`;
+  const q = k => QUIZ.find(x => x.key === k);
+  const one = k => { const o = q(k).opts.find(([v]) => v === profile[k]); return o ? optLabel(q(k), o[1]) : '—'; };
+  const many = k => q(k).opts.filter(([v]) => profile[k].includes(v)).map(o => optLabel(q(k), o[1])).join(', ') || t('s_none');
+  $('#summary').innerHTML = `<dt>${t('s_place')}</dt><dd>${one('place')}</dd>
+    <dt>${t('s_space')}</dt><dd>${one('space')}${profile.space === 'room' ? t(profile.floor ? 'with_floor' : 'without_floor') : ''}</dd>
+    <dt>${t('s_props')}</dt><dd>${many('props')}</dd><dt>${t('s_zones')}</dt><dd>${many('zones')}</dd>
+    <dt>${t('s_every')}</dt><dd>${one('every')}</dd><dt>${t('s_size')}</dt><dd>${one('size')}</dd>`;
+  const saved = store.get('lang', '');
+  $('#opt-lang').innerHTML = [['', t('lang_auto')], ...Object.entries(LANGS)]
+    .map(([v, l]) => `<option value="${v}" ${v === saved ? 'selected' : ''}>${l}</option>`).join('');
   $('#opt-sound').checked = profile.sound;
   if (invoke) {
     $('#autostart-row').hidden = false;
@@ -288,6 +279,9 @@ $('#go-settings').onclick = async () => {
 $('#opt-sound').onchange = e => { profile.sound = e.target.checked; store.set('profile', profile); };
 $('#opt-autostart').onchange = e => setAutostart(e.target.checked);
 $('#redo-quiz').onclick = startQuiz;
+$('#opt-lang').onchange = e => { e.target.value ? store.set('lang', e.target.value) : localStorage.removeItem('lang'); location.reload(); };
 
 // ---------- Inicio ----------
+for (const el of document.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n);
+for (const el of document.querySelectorAll('[data-i18n-label]')) el.setAttribute('aria-label', t(el.dataset.i18nLabel));
 if (profile) { restartTimer(); show('home'); } else startQuiz();
