@@ -113,7 +113,7 @@ function pickRoutine(p) {
 // ---------- Temporizador ----------
 // ponytail: el temporizador vive en la página; con la ventana oculta, WebView2 puede retrasar los timers
 // hasta ~1 minuto. Para recordatorios de 30-90 minutos es suficiente; si hace falta precisión, moverlo a Rust.
-function restartTimer(min = profile.every) { nextAt = Date.now() + min * 60000; paused = false; busy = false; }
+function restartTimer(min = profile.every) { nextAt = Date.now() + min * 60000; paused = false; busy = false; nudgedAt = 0; }
 const fmt = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 const clock = t => new Date(t).toLocaleTimeString(LANG, { hour: '2-digit', minute: '2-digit' });
 const today = () => new Date().toLocaleDateString('sv');
@@ -131,10 +131,10 @@ function renderHome() {
 
 // Estado del sistema (solo en la app de escritorio): tiempo sin usar la PC y si hay llamada o pantalla completa.
 const AWAY_SECS = 5 * 60;
-const MAX_BUSY_WAIT = 30 * 60000; // si sigues ocupado más de 30 min (p. ej. en un canal de voz todo el día), avisa igual
+const NUDGE_EVERY = 15 * 60000; // mientras sigas ocupado, el aviso pequeño se repite cada 15 min
 const sysStatus = () => invoke ? invoke('status').catch(() => ({ idle: 0, busy: false })) : Promise.resolve({ idle: 0, busy: false });
 
-let checking = false, lastIdleCheck = 0, busySince = 0;
+let checking = false, lastIdleCheck = 0, nudgedAt = 0;
 setInterval(async () => {
   if (!profile || checking) return;
   if (screen === 'home') renderHome();
@@ -147,10 +147,10 @@ setInterval(async () => {
     // Si estuviste fuera 5 minutos o más (o con la pantalla bloqueada), ya te moviste: el contador vuelve a empezar.
     if (st.idle >= AWAY_SECS && free && !paused) { restartTimer(); return; }
     if (due && free) {
-      // En llamada o pantalla completa: se espera a que termine, hasta un máximo de 30 minutos.
-      if (st.busy && !busy) busySince = Date.now();
-      busy = st.busy && Date.now() - busySince < MAX_BUSY_WAIT;
+      // En llamada, jugando o en pantalla completa: en vez de abrir la ventana, un aviso pequeño en la esquina.
+      busy = st.busy;
       if (!busy) remind();
+      else if (Date.now() - nudgedAt > NUDGE_EVERY) { nudgedAt = Date.now(); invoke?.('nudge', { show: true }).catch(console.error); }
     }
   } finally { checking = false; }
 }, 1000);
@@ -166,6 +166,11 @@ async function setAutostart(on) {
   try { await invoke(on ? 'plugin:autostart|enable' : 'plugin:autostart|disable'); } catch (e) { console.error(e); }
 }
 TAURI?.event.listen('stretch-now', () => { if (profile && screen !== 'session') remind(); });
+// Botones del aviso pequeño: "now" abre la pausa, "later" pospone 10 min, "close" sigue esperando.
+TAURI?.event.listen('nudge-action', ({ payload }) => {
+  if (payload === 'now' && screen !== 'session') remind();
+  if (payload === 'later') { restartTimer(10); renderHome(); }
+});
 invoke?.('tray_labels', { open: t('tray_open'), now: t('stretch_now'), quit: t('tray_quit') }).catch(() => {});
 
 // ---------- Actualizaciones ----------
@@ -202,6 +207,7 @@ function remind() {
   const secs = routine.reduce((s, e) => s + e.secs * (e.sides ? 2 : 1), 0);
   $('#remind-sub').textContent = t('remind_sub', Math.max(1, Math.round(secs / 60)));
   $('#remind-list').innerHTML = routine.map(e => `<li>${exText(e).name}</li>`).join('');
+  invoke?.('nudge', { show: false }).catch(() => {});
   show('remind'); surface(); chime();
 }
 $('#now').onclick = remind;

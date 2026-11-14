@@ -13,7 +13,7 @@ No es una app de ejercicio. Sirve para que quienes pasan el día frente a la pan
 - **Pausas guiadas.** De 2 a 6 estiramientos con animación, pasos y cuenta regresiva. Los que se hacen de los dos lados se repiten con la animación reflejada.
 - **29 estiramientos** para cuello, hombros, espalda alta y baja, muñecas, cadera y piernas, y ojos (regla 20-20-20).
 - **Modo discreto.** Si trabajas en una oficina compartida, prioriza los estiramientos que no llaman la atención.
-- **Sabe cuándo no estás o estás ocupado.** Si llevas 5 minutos sin usar el mouse ni el teclado (o con la pantalla bloqueada), el contador vuelve a empezar: ya te moviste. Durante una llamada (micrófono o cámara en uso), en pantalla completa o presentando, espera a que termines, hasta 30 minutos.
+- **Sabe cuándo no estás o estás ocupado.** Si llevas 5 minutos sin usar el mouse ni el teclado (o con la pantalla bloqueada), el contador vuelve a empezar: ya te moviste. Durante una llamada (micrófono o cámara en uso), jugando en pantalla completa o presentando, no abre la ventana: aparece un aviso pequeño en la esquina, encima de todo pero sin quitarte el foco, que se cierra solo a los 25 segundos. Se repite cada 15 minutos mientras sigas ocupado. Para verlo, ejecuta `estira.exe --test-nudge`.
 - **Actualizaciones automáticas.** Cuando se publica una versión nueva, Estira ofrece instalarla.
 - **Bandeja del sistema.** Al cerrar la ventana, Estira sigue en la bandeja. Puede abrirse sola al iniciar Windows.
 - **Español e inglés.** Usa el idioma de Windows (inglés si no es español) y se puede cambiar en Ajustes.

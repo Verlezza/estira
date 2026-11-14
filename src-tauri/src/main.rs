@@ -4,7 +4,7 @@
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Emitter, Manager, State, WindowEvent, Wry,
+    AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder, WindowEvent, Wry,
 };
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_updater::UpdaterExt;
@@ -139,6 +139,76 @@ async fn install_update(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+// ---------- Aviso discreto ----------
+
+/// Muestra u oculta el aviso pequeño de la esquina. Se usa cuando estás en una llamada,
+/// jugando o en pantalla completa: queda encima de todo pero no te quita el foco.
+/// Es async a propósito: en Windows, crear ventanas desde un comando síncrono puede bloquear la app.
+#[tauri::command]
+async fn nudge(app: AppHandle, show: bool) -> Result<(), String> {
+    if let Some(w) = app.get_webview_window("nudge") {
+        let _ = w.close();
+    }
+    if !show {
+        return Ok(());
+    }
+    let (w, h, margin) = (360.0, 112.0, 16.0);
+    let mut builder = WebviewWindowBuilder::new(&app, "nudge", WebviewUrl::App("nudge.html".into()))
+        .title("Estira")
+        .inner_size(w, h)
+        .decorations(false)
+        .resizable(false)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .focused(false)
+        .visible(false);
+    // Esquina inferior derecha del monitor principal, sobre la barra de tareas.
+    if let Ok(Some(m)) = app.primary_monitor() {
+        let (area, scale) = (m.work_area(), m.scale_factor());
+        let x = (area.position.x as f64 + area.size.width as f64) / scale - w - margin;
+        let y = (area.position.y as f64 + area.size.height as f64) / scale - h - margin;
+        builder = builder.position(x, y);
+    }
+    let win = builder.build().map_err(|e| e.to_string())?;
+    show_without_focus(&win);
+    Ok(())
+}
+
+/// Muestra la ventana sin activarla, como las notificaciones de Windows: no te saca del juego ni de lo que escribes.
+#[cfg(windows)]
+fn show_without_focus(win: &tauri::WebviewWindow) {
+    use windows_sys::Win32::UI::WindowsAndMessaging::{
+        GetWindowLongPtrW, SetWindowLongPtrW, SetWindowPos, ShowWindow, GWL_EXSTYLE, HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOMOVE,
+        SWP_NOSIZE, SW_SHOWNOACTIVATE, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
+    };
+    let Ok(h) = win.hwnd() else { return };
+    let hwnd = h.0 as _;
+    // SAFETY: hwnd es la ventana recién creada por Tauri y sigue viva durante estas llamadas.
+    unsafe {
+        let ex = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+        SetWindowLongPtrW(hwnd, GWL_EXSTYLE, ex | (WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW) as isize);
+        ShowWindow(hwnd, SW_SHOWNOACTIVATE);
+        SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+    }
+}
+
+#[cfg(not(windows))]
+fn show_without_focus(win: &tauri::WebviewWindow) {
+    let _ = win.show();
+}
+
+/// Botones del aviso: "now" abre la pausa, "later" pospone y "close" solo lo cierra.
+#[tauri::command]
+fn nudge_action(app: AppHandle, action: String) {
+    if let Some(w) = app.get_webview_window("nudge") {
+        let _ = w.close();
+    }
+    if action == "now" {
+        show(&app);
+    }
+    let _ = app.emit_to("main", "nudge-action", action);
+}
+
 // ---------- Bandeja ----------
 
 struct Tray(MenuItem<Wry>, MenuItem<Wry>, MenuItem<Wry>);
@@ -157,7 +227,7 @@ fn main() {
         .plugin(tauri_plugin_single_instance::init(|app, _, _| show(app)))
         .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec!["--minimized"])))
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .invoke_handler(tauri::generate_handler![status, check_update, install_update, tray_labels])
+        .invoke_handler(tauri::generate_handler![status, check_update, install_update, tray_labels, nudge, nudge_action])
         .setup(|app| {
             let open = MenuItem::with_id(app, "open", "Open Estira", true, None::<&str>)?;
             let now = MenuItem::with_id(app, "now", "Stretch now", true, None::<&str>)?;
@@ -188,11 +258,19 @@ fn main() {
             if !std::env::args().any(|a| a == "--minimized") {
                 show(app.handle());
             }
+            // Para probar el aviso pequeño sin estar en una llamada: estira.exe --test-nudge (aparece a los 8 s).
+            if std::env::args().any(|a| a == "--test-nudge") {
+                let h = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    std::thread::sleep(std::time::Duration::from_secs(8));
+                    let _ = nudge(h, true).await;
+                });
+            }
             Ok(())
         })
         // Cerrar la ventana la esconde en la bandeja; los recordatorios siguen corriendo.
         .on_window_event(|w, e| {
-            if let WindowEvent::CloseRequested { api, .. } = e {
+            if let (WindowEvent::CloseRequested { api, .. }, "main") = (e, w.label()) {
                 api.prevent_close();
                 let _ = w.hide();
             }

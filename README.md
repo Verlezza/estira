@@ -13,7 +13,7 @@ It is not a workout app. It helps people who spend all day in front of a screen 
 - **Guided breaks.** 2 to 6 animated stretches with steps and a countdown. Stretches done on both sides repeat with the animation mirrored.
 - **29 stretches** for the neck, shoulders, upper and lower back, wrists, hips and legs, and eyes (20-20-20 rule).
 - **Discreet mode.** If you work in a shared office, it favors stretches that don't draw attention.
-- **Knows when you're away or busy.** If you haven't touched the mouse or keyboard for 5 minutes (or the screen is locked), the countdown restarts: you already moved. During a call (microphone or camera in use), full screen or a presentation, it waits until you're done, up to 30 minutes.
+- **Knows when you're away or busy.** If you haven't touched the mouse or keyboard for 5 minutes (or the screen is locked), the countdown restarts: you already moved. During a call (microphone or camera in use), while gaming in full screen or presenting, it doesn't open the window: a small, discreet notice slides into the corner, stays on top without taking focus and closes itself after 25 seconds. It repeats every 15 minutes while you're busy. To preview it, run `estira.exe --test-nudge`.
 - **Automatic updates.** When a new version is published, Estira offers to install it.
 - **System tray.** Closing the window keeps Estira in the tray. It can start automatically with Windows.
 - **English and Spanish.** Uses your Windows language (English unless it is Spanish), and you can change it in Settings.

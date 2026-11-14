@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Estira</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<!-- Aviso pequeño que aparece en la esquina cuando estás ocupado (llamada, juego o pantalla completa). -->
+<body class="nudge">
+  <svg class="nudge-fig" id="fig" aria-hidden="true"></svg>
+  <div class="nudge-body">
+    <strong data-i18n="nudge_title"></strong>
+    <p data-i18n="nudge_text"></p>
+    <div class="nudge-actions">
+      <button class="primary" data-action="now" data-i18n="nudge_now"></button>
+      <button data-action="later" data-i18n="snooze"></button>
+    </div>
+  </div>
+  <button class="nudge-close" data-action="close" data-i18n-label="close">×</button>
+<script src="i18n.js"></script>
+<script src="exercises.js"></script>
+<script src="figure.js"></script>
+<script src="nudge.js"></script>
+</body>
+</html>

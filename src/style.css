@@ -120,4 +120,14 @@ dialog form button { flex: 1; }
 .towel { stroke: var(--towel); stroke-width: 5; }
 .ball { fill: var(--ball); }
 
+/* Aviso pequeño de la esquina */
+body.nudge { display: flex; align-items: center; gap: 10px; padding: 10px 14px 10px 8px; background: var(--surface); border-left: 4px solid var(--accent); overflow: hidden; user-select: none; }
+.nudge-fig { width: 76px; height: 84px; flex-shrink: 0; }
+.nudge-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.nudge-body strong { font-size: 14.5px; }
+.nudge-body p { font-size: 13px; color: var(--muted); line-height: 1.3; }
+.nudge-actions { display: flex; gap: 6px; margin-top: 2px; }
+.nudge-actions button { padding: 5px 10px; font-size: 13px; border-radius: 8px; }
+.nudge-close { position: absolute; top: 4px; right: 6px; background: none; border: none; color: var(--muted); font-size: 18px; padding: 0 6px; line-height: 1.2; }
+
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
