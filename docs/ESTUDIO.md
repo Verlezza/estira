@@ -21,7 +21,7 @@ El obstáculo no es saber qué hacer, sino acordarse. Por eso Estira es, ante to
 | EyeLeo | Buen descanso visual | Se centra en los ojos |
 | Apps del celular | Rutinas completas | Están en otro dispositivo y no saben que llevas 2 horas en la computadora |
 
-**Qué aporta Estira:** estiramientos animados, elegidos según el espacio y los objetos que tienes, en español y con un instalador ligero.
+**Qué aporta Estira:** estiramientos ilustrados, elegidos según el espacio y los objetos que tienes, en español y con un instalador ligero.
 
 ## 3. Decisiones técnicas
 
@@ -48,17 +48,17 @@ No hace falta un motor de base de datos:
 
 Si en el futuro se guarda historial de semanas o meses, se puede pasar a SQLite con el plugin oficial de Tauri.
 
-### Animaciones hechas con código
+### Ilustraciones hechas con código
 
 En lugar de dibujar o descargar imágenes, una figura se dibuja en SVG a partir de los ángulos de sus articulaciones: columna, cuello, hombros, codos, muñecas, cadera, rodillas y tobillos. Cada estiramiento es una lista de poses, y el motor interpola entre ellas.
 
 Ventajas:
 
-- Los 29 estiramientos ocupan unos pocos KB.
+- Los 36 estiramientos ocupan unos pocos KB.
 - Se adaptan al modo claro y oscuro.
 - Agregar uno nuevo es escribir unos ángulos, sin herramientas de diseño.
-- Los ejercicios que se hacen de ambos lados reflejan la animación automáticamente.
-- Si la persona tiene activado "reducir movimiento" en Windows, se muestra la pose sin animar.
+- Los ejercicios que se hacen de ambos lados se reflejan automáticamente.
+- En la v0.4.0 la animación en bucle se cambió por una ilustración fija (pose inicial tenue, final sólida, flecha y zona pintada en naranja), porque el bucle confundía: no quedaba claro si había que mantener la posición o repetir el movimiento. Cada estiramiento indica ahora "Mantén" o "Repite".
 
 Límite: en 2D no se ve bien la rotación del tronco. El giro sentado se insinúa estrechando los hombros y girando la mirada.
 

@@ -23,7 +23,7 @@ const optLabel = (q, key) => q.key === 'zones' ? t('zones')[key] : t(key);
 const SIZES = { short: 2, medium: 4, long: 6 };
 const RANK = { sit: 0, stand: 1, room: 2 };
 let profile = store.get('profile', null);
-let nextAt = 0, paused = false, busy = false, stopAnim = null;
+let nextAt = 0, paused = false, busy = false;
 
 // ---------- Pantallas ----------
 let screen = '', backTo = 'home';
@@ -100,12 +100,24 @@ function pickRoutine(p) {
     if (recent.includes(e.id)) w *= 0.15;
     return { e, w };
   });
+  // Con espacio para ponerse de pie, se alterna: uno en la silla, uno de pie (o en el piso).
+  const up = x => x.e.pos !== 'sit';
+  const alternate = p.space !== 'sit' && pool.some(up) && pool.some(x => !up(x));
+  let wantUp = Math.random() < 0.5;
   const out = [];
   while (out.length < SIZES[p.size] && pool.length) {
-    let r = Math.random() * pool.reduce((s, x) => s + x.w, 0), i = 0;
-    while (i < pool.length - 1 && (r -= pool[i].w) > 0) i++;
-    out.push(pool.splice(i, 1)[0].e);
+    let cand = alternate ? pool.filter(x => up(x) === wantUp) : pool;
+    if (!cand.length) cand = pool;
+    // Evita dos seguidos de la misma zona (por ejemplo, cuello y cuello).
+    const last = out.at(-1)?.zones[0], w = x => (x.e.zones[0] === last ? x.w * 0.2 : x.w);
+    let r = Math.random() * cand.reduce((s, x) => s + w(x), 0), i = 0;
+    while (i < cand.length - 1 && (r -= w(cand[i])) > 0) i++;
+    out.push(cand[i].e);
+    pool.splice(pool.indexOf(cand[i]), 1);
+    wantUp = !wantUp;
   }
+  // Los de piso van juntos al final: bajar al suelo y volver a subir una sola vez.
+  out.sort((x, y) => !!x.floor - !!y.floor);
   store.set('recent', out.map(e => e.id));
   return out;
 }
@@ -225,8 +237,8 @@ function runSession() {
   $('#dots').innerHTML = routine.map(() => '<i></i>').join('');
   const load = () => {
     const { ex, mirror, side } = plan[i];
-    stopAnim?.(); stopAnim = animateExercise($('#anim'), ex, mirror);
-    $('#side').textContent = side;
+    illustrate($('#anim'), ex, mirror);
+    $('#side').textContent = [side, t(isRepeat(ex) ? 'mode_repeat' : 'mode_hold')].filter(Boolean).join(' · ');
     const tx = exText(ex);
     $('#ex-name').textContent = tx.name;
     $('#ex-steps').innerHTML = tx.steps.map(s => `<li>${s}</li>`).join('');
@@ -255,7 +267,7 @@ function runSession() {
 }
 
 function finish(completed) {
-  clearInterval(tick); stopAnim?.(); stopAnim = null;
+  clearInterval(tick);
   restartTimer();
   if (completed) {
     const st = store.get('stats', {});
@@ -277,7 +289,7 @@ $('#go-catalog').onclick = () => {
     const b = document.createElement('button');
     b.className = `card ${ok ? 'on' : 'off'}`;
     b.innerHTML = `<svg aria-hidden="true"></svg><span>${exText(ex).name}</span>`;
-    animateExercise(b.querySelector('svg'), ex, false, true);
+    illustrate(b.querySelector('svg'), ex);
     b.onclick = () => openDetail(ex);
     grid.append(b);
   }
@@ -286,14 +298,13 @@ $('#go-catalog').onclick = () => {
 
 function openDetail(ex) {
   const d = $('#detail');
-  stopAnim?.(); stopAnim = animateExercise($('#detail-anim'), ex);
+  illustrate($('#detail-anim'), ex);
   const tx = exText(ex);
   $('#detail-name').textContent = tx.name;
   const req = t('pos_' + ex.pos) + (ex.floor ? t('on_floor') : '');
-  $('#detail-meta').textContent = `${ex.zones.map(z => t('zones')[z]).join(' · ')} — ${req} — ${ex.secs} s${ex.sides ? t('per_side') : ''}`;
+  $('#detail-meta').textContent = `${t(isRepeat(ex) ? 'mode_repeat' : 'mode_hold')} — ${ex.zones.map(z => t('zones')[z]).join(' · ')} — ${req} — ${ex.secs} s${ex.sides ? t('per_side') : ''}`;
   $('#detail-steps').innerHTML = tx.steps.map(s => `<li>${s}</li>`).join('');
   $('#detail-caution').textContent = tx.caution || '';
-  d.onclose = () => { stopAnim?.(); stopAnim = null; };
   d.showModal();
 }
 

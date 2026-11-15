@@ -2,7 +2,7 @@
 
 **English** · [Español](README.es.md)
 
-Estira is a free, open-source desktop app that reminds you to take breaks while you work at the computer. Each break guides you through short, animated stretches.
+Estira is a free, open-source desktop app that reminds you to take breaks while you work at the computer. Each break guides you through short, illustrated stretches.
 
 It is not a workout app. It helps people who spend all day in front of a screen move a little every so often, to prevent neck, back and wrist discomfort.
 
@@ -10,8 +10,9 @@ It is not a workout app. It helps people who spend all day in front of a screen 
 
 - **Setup questionnaire.** Asks how much space you have, whether you can use the floor, what you have at hand (sturdy chair, desk, wall, towel, ball) and where you feel tension. It uses your answers to pick the stretches you can do.
 - **Reminders.** Every 30, 45, 60 or 90 minutes the window pops up on top with a soft chime. You can start, snooze for 10 minutes or skip that break.
-- **Guided breaks.** 2 to 6 animated stretches with steps and a countdown. Stretches done on both sides repeat with the animation mirrored.
-- **29 stretches** for the neck, shoulders, upper and lower back, wrists, hips and legs, and eyes (20-20-20 rule).
+- **Guided breaks.** 2 to 6 stretches with steps and a countdown. Each illustration shows the start pose faded, the end pose solid, an arrow with the movement and, in orange, the area being stretched. It also says whether to hold the position or repeat the movement. Stretches done on both sides are mirrored.
+- **Variety.** If you have room, breaks alternate between seated and standing stretches, avoid working the same area twice in a row, and leave floor stretches for the end.
+- **36 stretches** for the neck, shoulders, upper and lower back, wrists, hips and legs, and eyes (20-20-20 rule).
 - **Discreet mode.** If you work in a shared office, it favors stretches that don't draw attention.
 - **Knows when you're away or busy.** If you haven't touched the mouse or keyboard for 5 minutes (or the screen is locked), the countdown restarts: you already moved. During a call (microphone or camera in use), while gaming in full screen or presenting, it doesn't open the window: a small, discreet notice slides into the corner, stays on top without taking focus and closes itself after 25 seconds. It repeats every 15 minutes while you're busy. To preview it, run `estira.exe --test-nudge`.
 - **Automatic updates.** When a new version is published, Estira offers to install it.
@@ -19,7 +20,7 @@ It is not a workout app. It helps people who spend all day in front of a screen 
 - **English and Spanish.** Uses your Windows language (English unless it is Spanish), and you can change it in Settings.
 - **Lightweight.** It uses the WebView2 runtime that comes with Windows, so the installer is under 2 MB.
 
-The animations are not images or videos: a figure is drawn in code from joint angles (see [`src/figure.js`](src/figure.js)).
+The illustrations are not image files: a figure is drawn in code from joint angles (see [`src/figure.js`](src/figure.js)).
 
 ## Install
 
@@ -60,7 +61,7 @@ src/                 Interface (plain HTML, CSS and JavaScript, no frameworks)
   app.js             Questionnaire, timer, breaks, catalog and settings
   exercises.js       Stretch catalog (Spanish source)
   i18n.js            Spanish and English texts, language detection
-  figure.js          Animated figure engine
+  figure.js          Illustrated figure engine
 src-tauri/           Desktop shell (Rust): tray, autostart, installer
 tests/               Automatic catalog check (npm test)
 docs/ESTUDIO.md      Research and project decisions (in Spanish)
@@ -70,7 +71,7 @@ The code comments and project docs are in Spanish.
 
 ## Adding a stretch
 
-Add an object to `EXERCISES` in [`src/exercises.js`](src/exercises.js) and its translation to `EXERCISES_EN` in [`src/i18n.js`](src/i18n.js). The fields are described at the top of the file. The animation is a list of poses: each pose only changes the angles that move relative to the base scene (`sit-front`, `sit-side`, `stand-front`, `stand-side` or `floor-side`). The angle convention is described at the top of [`src/figure.js`](src/figure.js).
+Add an object to `EXERCISES` in [`src/exercises.js`](src/exercises.js) and its translation to `EXERCISES_EN` in [`src/i18n.js`](src/i18n.js). The fields are described at the top of the file. The illustration comes from a list of poses (the first and last are drawn, or the two most different ones for repeated movements), and `target` names the area to paint: each pose only changes the angles that move relative to the base scene (`sit-front`, `sit-side`, `stand-front`, `stand-side` or `floor-side`). The angle convention is described at the top of [`src/figure.js`](src/figure.js).
 
 To check the result, run `npm test`, open the app, go to **See stretches** and tap yours.
 

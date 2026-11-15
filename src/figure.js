@@ -1,4 +1,4 @@
-// Motor de la figura animada: un esqueleto 2D definido por ángulos en grados.
+// Motor de la figura ilustrada: un esqueleto 2D definido por ángulos en grados.
 // Convención: un ángulo de 0 apunta hacia arriba y crece en sentido horario (90 = derecha, 180 = abajo).
 //   x, y        posición de la cadera
 //   sp, ch      columna baja (absoluto) y pecho (relativo a sp)
@@ -20,6 +20,7 @@ const SCENES = {
   'stand-front': { view: 'front', pose: { l1: 183, l2: 177, a1: 14, a2: -14, f1: -6, f2: 6 }, bg: [] },
   'stand-side': { view: 'side', pose: { x: 90, a1: 4, a2: -4, f1: -10, f2: -10 }, bg: [] },
   'floor-side': { view: 'side', pose: {}, bg: ['mat'], vb: '0 80 200 140' },
+  'floor-front': { view: 'front', pose: { y: 196, tf: 0.9 }, bg: ['mat'], vb: '0 80 200 140' },
 };
 
 const rad = d => d * Math.PI / 180;
@@ -62,6 +63,7 @@ const PROPS = {
   deskStand: () => `<g class="prop"><rect x="146" y="140" width="64" height="6" rx="2"/><path d="M196 146V${FLOOR}"/></g>`,
   monitor: () => `<g class="prop"><rect x="176" y="86" width="8" height="34" rx="2"/><path d="M180 120V128"/></g>`,
   wall: () => `<g class="prop"><rect x="176" y="20" width="10" height="${FLOOR - 20}" class="soft"/></g>`,
+  stool: () => `<g class="prop"><rect x="74" y="172" width="40" height="7" rx="3"/><path d="M80 179V${FLOOR} M108 179V${FLOOR}"/></g>`,
   mat: () => `<g class="prop"><rect x="14" y="${FLOOR - 4}" width="172" height="5" rx="2" class="soft"/></g>`,
 };
 
@@ -88,40 +90,89 @@ function draw(q, view, extras) {
   return out;
 }
 
-const ease = t => t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
-const TRANS = 1.1; // segundos entre poses
+// ---------- Ilustración fija ----------
+// Se dibuja la pose inicial en tenue, la final en sólido y una flecha con el recorrido.
+// La flecha va separada del cuerpo para no tapar la figura.
 
-function poseAt(frames, t) {
-  const total = frames.reduce((n, f) => n + TRANS + (f.h ?? 1), 0);
-  t %= total;
-  for (let i = 0; i < frames.length; i++) {
-    const prev = frames[(i - 1 + frames.length) % frames.length].q, cur = frames[i];
-    if (t < TRANS) { const k = ease(t / TRANS), o = {}; for (const key in cur.q) o[key] = prev[key] + (cur.q[key] - prev[key]) * k; return o; }
-    t -= TRANS;
-    if (t < (cur.h ?? 1)) return cur.q;
-    t -= cur.h ?? 1;
+// Un estiramiento "se repite" si va y vuelve (encoger hombros, círculos); si no, "se mantiene".
+const isRepeat = ex => ex.frames.length > 2 || Math.max(...ex.frames.map(f => f.h ?? 1)) < 2.5;
+
+// Las dos poses más distintas entre sí: para los que se repiten, los extremos del movimiento.
+function keyPoses(qs) {
+  if (qs.length === 2) return qs;
+  let best = [qs[0], qs[1]], max = -1;
+  for (const a of qs) for (const b of qs) {
+    const d = Object.keys(a).reduce((n, k) => n + Math.abs(a[k] - b[k]), 0);
+    if (d > max) { max = d; best = [a, b]; }
   }
-  return frames[0].q;
+  return best;
 }
 
-// Dibuja y anima un estiramiento dentro de un <svg>. Devuelve una función para detenerlo.
-function animateExercise(svg, ex, mirror = false, thumb = false) {
-  const scene = SCENES[ex.scene];
-  const frames = ex.frames.map(f => ({ q: { ...BASE, ...scene.pose, ...ex.base, ...f.p }, h: f.h }));
-  const extras = ex.props || [];
-  svg.setAttribute('viewBox', scene.vb || '0 0 200 220');
-  const bg = scene.bg.concat(extras.filter(p => PROPS[p])).map(p => PROPS[p]()).join('');
-  svg.innerHTML = `<g ${mirror ? 'transform="translate(200 0) scale(-1 1)"' : ''}>
-    <line class="floor" x1="0" y1="${FLOOR}" x2="200" y2="${FLOOR}"/>${bg}<g class="fig"></g></g>`;
-  const fig = svg.querySelector('.fig');
-  const still = thumb || matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let raf, t0 = performance.now();
-  const tick = now => {
-    // Con movimiento reducido se muestra la pose principal sin animar.
-    const q = still ? frames[Math.min(1, frames.length - 1)].q : poseAt(frames, (now - t0) / 1000);
-    fig.innerHTML = draw(q, scene.view, extras);
-    if (!still) raf = requestAnimationFrame(tick);
+function arrowSvg(q0, q1, side, both) {
+  const s0 = solve(q0, side), s1 = solve(q1, side);
+  // Punto que más se mueve: manos, cabeza, hombros o pies. Cabeza y hombros pesan más para que,
+  // por ejemplo, al encoger los hombros la flecha vaya en el hombro y no en la mano.
+  const cands = [[s0.arm1[3], s1.arm1[3], 12, 1], [s0.arm2[3], s1.arm2[3], 12, 1], [s0.head, s1.head, LEN.hd + 12, 1.5],
+    [s0.sR, s1.sR, 14, 1.5], [s0.leg1[3], s1.leg1[3], 12, 1], [s0.leg2[3], s1.leg2[3], 12, 1]];
+  const dist = c => Math.hypot(c[1][0] - c[0][0], c[1][1] - c[0][1]) * c[3];
+  let [a, b, off] = cands.reduce((m, c) => (dist(c) > dist(m) ? c : m));
+  // Movimientos pequeños (cuello, tobillos): la flecha tiene un largo mínimo para que se lea.
+  const MIN = 28, len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  if (len < MIN) {
+    const ux = len ? (b[0] - a[0]) / len : 1, uy = len ? (b[1] - a[1]) / len : 0, k = (MIN - len) / 2;
+    a = [a[0] - ux * k, a[1] - uy * k]; b = [b[0] + ux * k, b[1] + uy * k];
+  }
+  // La flecha se corre en perpendicular al movimiento, hacia el lado opuesto al cuerpo.
+  const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, c = s1.mid, ml = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+  let nx = -(b[1] - a[1]) / ml, ny = (b[0] - a[0]) / ml;
+  if ((mx + nx - c[0]) ** 2 + (my + ny - c[1]) ** 2 < (mx - c[0]) ** 2 + (my - c[1]) ** 2) { nx = -nx; ny = -ny; }
+  // Si de ese lado no cabe en el dibujo, va del otro.
+  const fits = k => [a, b].every(p => p[0] + nx * k * off > 6 && p[0] + nx * k * off < 194 && p[1] + ny * k * off > 6 && p[1] + ny * k * off < 214);
+  if (!fits(1.6) && fits(-1.6)) { nx = -nx; ny = -ny; }
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const P = p => [clamp(p[0] + nx * off, 6, 194), clamp(p[1] + ny * off, 6, 214)];
+  const p0 = P(a), p1 = P(b), d = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]) || 1;
+  const bulge = Math.max(d * 0.35, 10);
+  const cx = clamp((p0[0] + p1[0]) / 2 + nx * bulge, 4, 196), cy = clamp((p0[1] + p1[1]) / 2 + ny * bulge, 4, 216);
+  const head = (p, from) => {
+    const ang = Math.atan2(p[1] - from[1], p[0] - from[0]);
+    const w = k => `${(p[0] - 8 * Math.cos(ang + k)).toFixed(1)},${(p[1] - 8 * Math.sin(ang + k)).toFixed(1)}`;
+    return `<polyline class="arrow" points="${w(0.5)} ${pts([p])} ${w(-0.5)}"/>`;
   };
-  tick(t0);
-  return () => cancelAnimationFrame(raf);
+  return `<path class="arrow" d="M${pts([p0])} Q${cx.toFixed(1)},${cy.toFixed(1)} ${pts([p1])}"/>` +
+    head(p1, [cx, cy]) + (both ? head(p0, [cx, cy]) : '');
+}
+
+// Zonas que se pueden pintar: cada una es una lista de tramos del esqueleto.
+const TARGETS = {
+  neck: s => [[s.top, s.neckEnd]],
+  shoulders: s => [[s.sL, s.top, s.sR]],
+  upper: s => [[s.mid, s.top]],
+  lower: s => [[s.hip, s.mid]],
+  arm1: s => [s.arm1.slice(0, 2)], arm2: s => [s.arm2.slice(0, 2)],
+  fore1: s => [s.arm1.slice(1)], fore2: s => [s.arm2.slice(1)],
+  thigh1: s => [s.leg1.slice(0, 2)], thigh2: s => [s.leg2.slice(0, 2)],
+  shin1: s => [s.leg1.slice(1, 3)], shin2: s => [s.leg2.slice(1, 3)],
+  foot1: s => [s.leg1.slice(2)], foot2: s => [s.leg2.slice(2)],
+};
+
+// Pinta la zona que se estira sobre la pose final.
+function paintTarget(q, side, target) {
+  const s = solve(q, side);
+  return (target || '').split(' ').filter(Boolean).flatMap(k => TARGETS[k](s))
+    .map(p => `<polyline class="target${p.length && (p[0] === s.hip || p[0] === s.mid) && side ? ' wide' : ''}" points="${pts(p)}"/>`).join('');
+}
+
+// Dibuja la ilustración de un estiramiento en un <svg>.
+function illustrate(svg, ex, mirror = false) {
+  const scene = SCENES[ex.scene], extras = ex.props || [];
+  const qs = ex.frames.map(f => ({ ...BASE, ...scene.pose, ...ex.base, ...f.p }));
+  const repeat = isRepeat(ex), [q0, q1] = repeat ? keyPoses(qs) : [qs[0], qs[qs.length - 1]];
+  const bg = scene.bg.concat(extras.filter(p => PROPS[p])).map(p => PROPS[p]()).join('');
+  svg.setAttribute('viewBox', scene.vb || '0 0 200 220');
+  svg.innerHTML = `<g ${mirror ? 'transform="translate(200 0) scale(-1 1)"' : ''}>
+    <line class="floor" x1="0" y1="${FLOOR}" x2="200" y2="${FLOOR}"/>${bg}
+    <g class="fig ghost">${draw(q0, scene.view, extras)}</g><g class="fig">${draw(q1, scene.view, extras)}</g>
+    <g class="fig">${paintTarget(q1, scene.view === 'side', ex.target)}</g>
+    ${arrowSvg(q0, q1, scene.view === 'side', repeat)}</g>`;
 }

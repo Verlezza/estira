@@ -8,7 +8,7 @@ const assert = require('assert');
 const ctx = { navigator: { language: 'es' }, localStorage: { getItem: () => null }, document: { documentElement: {} } };
 vm.createContext(ctx);
 for (const f of ['i18n.js', 'exercises.js', 'figure.js']) vm.runInContext(fs.readFileSync(`${__dirname}/../src/${f}`, 'utf8'), ctx);
-const { EXERCISES, STR, EXERCISES_EN, SCENES, BASE, draw } = vm.runInContext('({ EXERCISES, STR, EXERCISES_EN, SCENES, BASE, draw })', ctx);
+const { EXERCISES, STR, EXERCISES_EN, SCENES, BASE, draw, TARGETS } = vm.runInContext('({ EXERCISES, STR, EXERCISES_EN, SCENES, BASE, draw, TARGETS })', ctx);
 const ZONES = STR.es.zones;
 
 // Los dos idiomas deben tener las mismas claves de texto.
@@ -27,6 +27,7 @@ for (const ex of EXERCISES) {
   assert(SCENES[ex.scene], `${where} usa una escena que no existe`);
   assert(ex.secs >= 10 && ex.secs <= 60, `${where} debe durar entre 10 y 60 segundos`);
   assert(ex.frames.length >= 2, `${where} necesita al menos 2 poses`);
+  assert(typeof ex.target === 'string' && ex.target.split(' ').filter(Boolean).every(k => k in TARGETS), `${where} tiene una zona a pintar inválida`);
   const en = EXERCISES_EN[ex.id];
   assert(en && en.name && en.steps.length === ex.steps.length, `${where} necesita su traducción al inglés con los mismos pasos`);
   assert(!ex.caution === !en.caution, `${where}: la advertencia debe existir en los dos idiomas`);

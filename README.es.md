@@ -2,7 +2,7 @@
 
 [English](README.md) · **Español**
 
-Estira es una aplicación de escritorio, libre y gratuita, que te recuerda hacer pausas mientras trabajas en la computadora. En cada pausa te guía con estiramientos cortos y animados.
+Estira es una aplicación de escritorio, libre y gratuita, que te recuerda hacer pausas mientras trabajas en la computadora. En cada pausa te guía con estiramientos cortos e ilustrados.
 
 No es una app de ejercicio. Sirve para que quienes pasan el día frente a la pantalla se muevan un poco cada cierto tiempo y eviten molestias en el cuello, la espalda y las muñecas.
 
@@ -10,8 +10,9 @@ No es una app de ejercicio. Sirve para que quienes pasan el día frente a la pan
 
 - **Cuestionario inicial.** Pregunta cuánto espacio tienes, si puedes usar el piso, qué tienes a mano (silla firme, escritorio, pared, toalla, pelota) y dónde sientes tensión. Con eso elige los estiramientos que puedes hacer.
 - **Recordatorios.** Cada 30, 45, 60 o 90 minutos la ventana aparece encima de todo con un sonido suave. Puedes empezar, posponer 10 minutos o saltar esa pausa.
-- **Pausas guiadas.** De 2 a 6 estiramientos con animación, pasos y cuenta regresiva. Los que se hacen de los dos lados se repiten con la animación reflejada.
-- **29 estiramientos** para cuello, hombros, espalda alta y baja, muñecas, cadera y piernas, y ojos (regla 20-20-20).
+- **Pausas guiadas.** De 2 a 6 estiramientos con pasos y cuenta regresiva. Cada ilustración muestra la pose inicial en tenue, la final en sólido, una flecha con el movimiento y, en naranja, la zona que se estira. También indica si hay que mantener la posición o repetir el movimiento. Los que se hacen de los dos lados se muestran reflejados.
+- **Variedad.** Si tienes espacio, las pausas alternan estiramientos en silla y de pie, evitan trabajar la misma zona dos veces seguidas y dejan los de piso para el final.
+- **36 estiramientos** para cuello, hombros, espalda alta y baja, muñecas, cadera y piernas, y ojos (regla 20-20-20).
 - **Modo discreto.** Si trabajas en una oficina compartida, prioriza los estiramientos que no llaman la atención.
 - **Sabe cuándo no estás o estás ocupado.** Si llevas 5 minutos sin usar el mouse ni el teclado (o con la pantalla bloqueada), el contador vuelve a empezar: ya te moviste. Durante una llamada (micrófono o cámara en uso), jugando en pantalla completa o presentando, no abre la ventana: aparece un aviso pequeño en la esquina, encima de todo pero sin quitarte el foco, que se cierra solo a los 25 segundos. Se repite cada 15 minutos mientras sigas ocupado. Para verlo, ejecuta `estira.exe --test-nudge`.
 - **Actualizaciones automáticas.** Cuando se publica una versión nueva, Estira ofrece instalarla.
@@ -19,7 +20,7 @@ No es una app de ejercicio. Sirve para que quienes pasan el día frente a la pan
 - **Español e inglés.** Usa el idioma de Windows (inglés si no es español) y se puede cambiar en Ajustes.
 - **Ligera.** Usa el WebView2 que ya trae Windows: el instalador pesa menos de 2 MB.
 
-Las animaciones no son imágenes ni videos: una figura se dibuja con código a partir de ángulos de articulaciones (ver [`src/figure.js`](src/figure.js)).
+Las ilustraciones no son archivos de imagen: una figura se dibuja con código a partir de ángulos de articulaciones (ver [`src/figure.js`](src/figure.js)).
 
 ## Instalar
 
@@ -59,7 +60,7 @@ src/                 Interfaz (HTML, CSS y JavaScript sin frameworks)
   app.js             Cuestionario, temporizador, pausas, catálogo y ajustes
   exercises.js       Catálogo de estiramientos
   i18n.js            Textos en español e inglés y detección del idioma
-  figure.js          Motor de la figura animada
+  figure.js          Motor de la figura ilustrada
 src-tauri/           Envoltura de escritorio (Rust): bandeja, autoarranque, instalador
 tests/               Revisión automática del catálogo (npm test)
 docs/ESTUDIO.md      Investigación y decisiones del proyecto
@@ -67,7 +68,7 @@ docs/ESTUDIO.md      Investigación y decisiones del proyecto
 
 ## Agregar un estiramiento
 
-Agrega un objeto a `EXERCISES` en [`src/exercises.js`](src/exercises.js) y su traducción en `EXERCISES_EN` de [`src/i18n.js`](src/i18n.js). Los campos están explicados al inicio del archivo. La animación se define con poses: cada pose cambia solo los ángulos que se mueven respecto a la escena base (`sit-front`, `sit-side`, `stand-front`, `stand-side` o `floor-side`). La convención de ángulos está al inicio de [`src/figure.js`](src/figure.js).
+Agrega un objeto a `EXERCISES` en [`src/exercises.js`](src/exercises.js) y su traducción en `EXERCISES_EN` de [`src/i18n.js`](src/i18n.js). Los campos están explicados al inicio del archivo. La ilustración sale de una lista de poses (se dibujan la primera y la última, o las dos más distintas en los movimientos que se repiten), y `target` indica la zona a pintar: cada pose cambia solo los ángulos que se mueven respecto a la escena base (`sit-front`, `sit-side`, `stand-front`, `stand-side` o `floor-side`). La convención de ángulos está al inicio de [`src/figure.js`](src/figure.js).
 
 Para revisar el resultado, ejecuta `npm test`, abre la app, ve a **Ver estiramientos** y toca el tuyo.
 

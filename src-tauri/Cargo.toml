@@ -1,6 +1,6 @@
 [package]
 name = "estira"
-version = "0.3.0"
+version = "0.4.0"
 description = "Pausas activas con estiramientos guiados"
 license = "MIT"
 edition = "2021"

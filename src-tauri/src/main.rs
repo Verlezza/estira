@@ -152,7 +152,7 @@ async fn nudge(app: AppHandle, show: bool) -> Result<(), String> {
     if !show {
         return Ok(());
     }
-    let (w, h, margin) = (360.0, 112.0, 16.0);
+    let (w, h, margin) = (300.0, 64.0, 12.0);
     let mut builder = WebviewWindowBuilder::new(&app, "nudge", WebviewUrl::App("nudge.html".into()))
         .title("Estira")
         .inner_size(w, h)
