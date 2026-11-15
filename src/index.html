@@ -16,7 +16,7 @@
   <section id="home" hidden>
     <header class="top">
       <h1>Estira</h1>
-      <button class="ghost" id="go-settings" data-i18n="settings"></button>
+      <div class="top-actions"><button class="ghost" id="go-stats" data-i18n="summary"></button><button class="ghost" id="go-settings" data-i18n="settings"></button></div>
     </header>
     <div class="ring">
       <svg viewBox="0 0 120 120" aria-hidden="true">
@@ -80,6 +80,22 @@
     </header>
     <p class="muted" data-i18n="catalog_note"></p>
     <div class="grid" id="grid"></div>
+  </section>
+
+  <section id="stats" hidden>
+    <header class="top">
+      <button class="ghost" data-back data-i18n="back"></button>
+      <h1 data-i18n="summary"></h1>
+    </header>
+    <div class="seg" id="stats-range" role="group">
+      <button data-days="1" data-i18n="st_today"></button><button data-days="7" data-i18n="st_7"></button><button data-days="30" data-i18n="st_30"></button>
+    </div>
+    <p class="muted" id="stats-empty" data-i18n="st_empty" hidden></p>
+    <div class="tiles" id="stats-tiles"></div>
+    <h2 class="small-h" data-i18n="st_chart"></h2>
+    <div class="chart" id="stats-chart"></div>
+    <h2 class="small-h" data-i18n="st_top"></h2>
+    <ul class="top-list" id="stats-top"></ul>
   </section>
 
   <section id="settings" hidden>

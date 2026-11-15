@@ -28,7 +28,7 @@ let nextAt = 0, paused = false, busy = false;
 // ---------- Pantallas ----------
 let screen = '', backTo = 'home';
 function show(id) {
-  if (screen !== 'catalog' && screen !== 'settings') backTo = screen || 'home';
+  if (!['catalog', 'settings', 'stats'].includes(screen)) backTo = screen || 'home';
   for (const s of document.querySelectorAll('main > section')) s.hidden = s.id !== id;
   screen = id;
   if (id === 'home') renderHome();
@@ -122,10 +122,31 @@ function pickRoutine(p) {
   return out;
 }
 
+// ---------- Historial ----------
+// Un resumen por día (se guardan los últimos 120): pausas, estiramientos y tiempo frente a la pantalla.
+const EMPTY_DAY = () => ({ screen: 0, away: 0, reminders: 0, onTime: 0, done: 0, partial: 0, skipped: 0, snoozed: 0, exDone: 0, exSkipped: 0, ex: {} });
+function logDay(fn) {
+  const h = store.get('history', {}), k = today();
+  fn(h[k] = { ...EMPTY_DAY(), ...h[k] });
+  for (const old of Object.keys(h).sort().slice(0, -120)) delete h[old];
+  store.set('history', h);
+}
+// Un "ciclo" va de un recordatorio a la pausa hecha o saltada; posponer no abre uno nuevo.
+let cycle = null; // { at: momento del primer aviso }
+function countReminder() {
+  if (cycle) return;
+  cycle = { at: Date.now() };
+  logDay(d => d.reminders++);
+}
+const ON_TIME_MS = 3 * 60000; // "a tiempo" = empezaste la pausa menos de 3 min después del aviso
+
 // ---------- Temporizador ----------
 // ponytail: el temporizador vive en la página; con la ventana oculta, WebView2 puede retrasar los timers
 // hasta ~1 minuto. Para recordatorios de 30-90 minutos es suficiente; si hace falta precisión, moverlo a Rust.
-function restartTimer(min = profile.every) { nextAt = Date.now() + min * 60000; paused = false; busy = false; nudgedAt = 0; }
+function restartTimer(min = profile.every, keepCycle = false) {
+  nextAt = Date.now() + min * 60000; paused = false; busy = false; nudgedAt = 0;
+  if (!keepCycle) cycle = null;
+}
 const fmt = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 const clock = t => new Date(t).toLocaleTimeString(LANG, { hour: '2-digit', minute: '2-digit' });
 const today = () => new Date().toLocaleDateString('sv');
@@ -136,7 +157,7 @@ function renderHome() {
   $('#home-label').textContent = t(busy ? 'busy_wait' : paused ? 'paused_until' : 'next_break_in');
   $('#home-time').textContent = busy ? '…' : fmt(left);
   $('#ring-bar').style.strokeDashoffset = 100 - Math.min(100, Math.max(0, left / total * 100));
-  const st = store.get('stats', {}), n = st.date === today() ? st.count : 0;
+  const n = store.get('history', {})[today()]?.done || 0;
   $('#home-today').textContent = n ? t('today_n', n) : t('today_none');
   $('#pause').textContent = t(paused ? 'resume' : 'pause_hour');
 }
@@ -146,7 +167,7 @@ const AWAY_SECS = 5 * 60;
 const NUDGE_EVERY = 15 * 60000; // mientras sigas ocupado, el aviso pequeño se repite cada 15 min
 const sysStatus = () => invoke ? invoke('status').catch(() => ({ idle: 0, busy: false })) : Promise.resolve({ idle: 0, busy: false });
 
-let checking = false, lastIdleCheck = 0, nudgedAt = 0;
+let checking = false, lastIdleCheck = 0, nudgedAt = 0, lastSample = Date.now();
 setInterval(async () => {
   if (!profile || checking) return;
   if (screen === 'home') renderHome();
@@ -156,13 +177,17 @@ setInterval(async () => {
   checking = true; lastIdleCheck = Date.now();
   try {
     const st = await sysStatus();
+    // Tiempo frente a la pantalla o fuera. Los saltos largos (PC suspendida) no cuentan.
+    const now = Date.now(), gap = Math.min(now - lastSample, 60000) / 1000;
+    lastSample = now;
+    logDay(d => { st.idle >= AWAY_SECS ? (d.away += gap) : (d.screen += gap); });
     // Si estuviste fuera 5 minutos o más (o con la pantalla bloqueada), ya te moviste: el contador vuelve a empezar.
     if (st.idle >= AWAY_SECS && free && !paused) { restartTimer(); return; }
     if (due && free) {
       // En llamada, jugando o en pantalla completa: en vez de abrir la ventana, un aviso pequeño en la esquina.
       busy = st.busy;
-      if (!busy) remind();
-      else if (Date.now() - nudgedAt > NUDGE_EVERY) { nudgedAt = Date.now(); invoke?.('nudge', { show: true }).catch(console.error); }
+      if (!busy) remind(true);
+      else if (Date.now() - nudgedAt > NUDGE_EVERY) { countReminder(); nudgedAt = Date.now(); invoke?.('nudge', { show: true }).catch(console.error); }
     }
   } finally { checking = false; }
 }, 1000);
@@ -181,7 +206,7 @@ TAURI?.event.listen('stretch-now', () => { if (profile && screen !== 'session') 
 // Botones del aviso pequeño: "now" abre la pausa, "later" pospone 10 min, "close" sigue esperando.
 TAURI?.event.listen('nudge-action', ({ payload }) => {
   if (payload === 'now' && screen !== 'session') remind();
-  if (payload === 'later') { restartTimer(10); renderHome(); }
+  if (payload === 'later') { logDay(d => d.snoozed++); restartTimer(10, true); renderHome(); }
 });
 invoke?.('tray_labels', { open: t('tray_open'), now: t('stretch_now'), quit: t('tray_quit') }).catch(() => {});
 
@@ -214,7 +239,9 @@ function chime() {
 
 // ---------- Recordatorio y sesión ----------
 let routine = [];
-function remind() {
+// auto = lo pidió el temporizador; con "Estirar ahora" no cuenta como recordatorio.
+function remind(auto = false) {
+  if (auto) countReminder();
   routine = pickRoutine(profile);
   const secs = routine.reduce((s, e) => s + e.secs * (e.sides ? 2 : 1), 0);
   $('#remind-sub').textContent = t('remind_sub', Math.max(1, Math.round(secs / 60)));
@@ -222,18 +249,22 @@ function remind() {
   invoke?.('nudge', { show: false }).catch(() => {});
   show('remind'); surface(); chime();
 }
-$('#now').onclick = remind;
-$('#snooze').onclick = () => { restartTimer(10); unpin(); show('home'); toTray(); };
-$('#skip').onclick = () => { restartTimer(); unpin(); show('home'); toTray(); };
-$('#start').onclick = () => { unpin(); runSession(); };
+$('#now').onclick = () => remind();
+$('#snooze').onclick = () => { logDay(d => d.snoozed++); restartTimer(10, true); unpin(); show('home'); toTray(); };
+$('#skip').onclick = () => { if (cycle) logDay(d => d.skipped++); restartTimer(); unpin(); show('home'); toTray(); };
+$('#start').onclick = () => {
+  if (cycle && Date.now() - cycle.at <= ON_TIME_MS) logDay(d => d.onTime++);
+  unpin(); runSession();
+};
 $('#pause').onclick = () => { paused ? restartTimer() : (restartTimer(60), paused = true); renderHome(); };
 
-let tick = null;
+let tick = null, spent = new Map();
 function runSession() {
   const plan = routine.flatMap(ex => ex.sides
     ? [{ ex, mirror: false, side: t('side1') }, { ex, mirror: true, side: t('side2') }]
     : [{ ex, mirror: false, side: '' }]);
   let i = 0, left = 0, holding = false;
+  spent = new Map(routine.map(e => [e, 0]));
   $('#dots').innerHTML = routine.map(() => '<i></i>').join('');
   const load = () => {
     const { ex, mirror, side } = plan[i];
@@ -258,6 +289,7 @@ function runSession() {
   tick = setInterval(() => {
     if (holding || screen !== 'session') return;
     left--; paint();
+    spent.set(plan[i].ex, spent.get(plan[i].ex) + 1);
     if (left <= 0) { chime(); next(); }
   }, 1000);
   $('#next').onclick = next;
@@ -269,16 +301,66 @@ function runSession() {
 function finish(completed) {
   clearInterval(tick);
   restartTimer();
-  if (completed) {
-    const st = store.get('stats', {});
-    store.set('stats', { date: today(), count: (st.date === today() ? st.count : 0) + 1 });
-  }
+  // Un estiramiento cuenta como hecho si le dedicaste al menos la mitad de su tiempo.
+  logDay(d => {
+    completed ? d.done++ : d.partial++;
+    for (const [ex, secs] of spent) {
+      if (secs >= ex.secs * (ex.sides ? 2 : 1) / 2) { d.exDone++; d.ex[ex.id] = (d.ex[ex.id] || 0) + 1; } else d.exSkipped++;
+    }
+  });
+  spent = new Map();
   $('#done-next').textContent = t('next_at', clock(nextAt));
   const tips = t('tips');
   $('#done-tip').textContent = tips[Math.floor(Math.random() * tips.length)];
   show('done');
 }
 $('#done-close').onclick = () => { show('home'); toTray(); };
+
+// ---------- Resumen ----------
+let statsDays = 7;
+const hm = secs => { const m = Math.round(secs / 60); return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h` + (m % 60 ? ` ${m % 60} min` : ''); };
+function renderStats() {
+  const h = store.get('history', {});
+  const keys = Array.from({ length: statsDays }, (_, i) => new Date(Date.now() - (statsDays - 1 - i) * 864e5).toLocaleDateString('sv'));
+  const days = keys.map(k => ({ k, ...EMPTY_DAY(), ...h[k] }));
+  const sum = f => days.reduce((n, d) => n + d[f], 0);
+  const tot = Object.fromEntries(Object.keys(EMPTY_DAY()).filter(f => f !== 'ex').map(f => [f, sum(f)]));
+  for (const b of document.querySelectorAll('#stats-range button')) b.setAttribute('aria-pressed', +b.dataset.days === statsDays);
+  const pct = (a, b) => (b ? `${Math.round(a / b * 100)}%` : '—');
+  // Racha: días seguidos (hasta hoy o ayer) con al menos una pausa.
+  let streak = 0;
+  for (let i = h[today()]?.done ? 0 : 1; ; i++) {
+    if (!h[new Date(Date.now() - i * 864e5).toLocaleDateString('sv')]?.done) break;
+    streak++;
+  }
+  const tile = (label, value, sub = '') => `<div class="tile"><span>${label}</span><strong>${value}</strong>${sub ? `<small>${sub}</small>` : ''}</div>`;
+  $('#stats-tiles').innerHTML = [
+    tile(t('st_done'), tot.done, t('st_of_reminders', tot.reminders)),
+    tile(t('st_on_time'), pct(tot.onTime, tot.reminders), t('st_on_time_sub')),
+    tile(t('st_skipped'), tot.skipped, t('st_snoozed', tot.snoozed)),
+    tile(t('st_partial'), tot.partial, t('st_partial_sub')),
+    tile(t('st_ex_done'), tot.exDone, t('st_per_day', (tot.exDone / statsDays).toFixed(1))),
+    tile(t('st_ex_skipped'), tot.exSkipped),
+    tile(t('st_screen'), hm(tot.screen), t('st_per_day', hm(tot.screen / statsDays))),
+    tile(t('st_away'), hm(tot.away)),
+    tile(t('st_streak'), t('st_days', streak)),
+  ].join('');
+  // Gráfico: pausas hechas por día (una sola serie, sin leyenda; el detalle va en el tooltip).
+  const max = Math.max(1, ...days.map(d => d.done));
+  const label = k => new Date(k + 'T12:00').toLocaleDateString(LANG, statsDays > 7 ? { day: 'numeric' } : { weekday: 'short' });
+  $('#stats-chart').innerHTML = days.map(d => `<div class="bar-col" title="${new Date(d.k + 'T12:00').toLocaleDateString(LANG, { weekday: 'long', day: 'numeric', month: 'short' })}: ${t('st_bar_tip', d.done, d.skipped, d.snoozed)}">
+      <i style="height:${d.done / max * 100}%"></i><span>${statsDays > 14 && keys.indexOf(d.k) % 5 ? '' : label(d.k)}</span></div>`).join('');
+  // Los estiramientos que más hiciste.
+  const count = {};
+  for (const d of days) for (const [id, n] of Object.entries(d.ex)) count[id] = (count[id] || 0) + n;
+  const top = Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  $('#stats-top').innerHTML = top.length
+    ? top.map(([id, n]) => { const ex = EXERCISES.find(e => e.id === id); return ex ? `<li><span>${exText(ex).name}</span><b>${n}</b></li>` : ''; }).join('')
+    : `<li class="muted">${t('st_none')}</li>`;
+  $('#stats-empty').hidden = tot.reminders + tot.done + tot.screen > 0;
+}
+document.querySelectorAll('#stats-range button').forEach(b => b.onclick = () => { statsDays = +b.dataset.days; renderStats(); });
+$('#go-stats').onclick = () => { renderStats(); show('stats'); };
 
 // ---------- Catálogo ----------
 $('#go-catalog').onclick = () => {
