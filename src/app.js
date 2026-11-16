@@ -223,11 +223,11 @@ $('#update-btn').onclick = async () => {
 };
 if (invoke) { setTimeout(checkUpdate, 10000); setInterval(checkUpdate, 12 * 3600000); }
 
-function chime() {
+function chime(notes = [660, 880]) {
   if (!profile?.sound) return;
   try {
     const ctx = new AudioContext();
-    [660, 880].forEach((f, i) => {
+    notes.forEach((f, i) => {
       const o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + i * 0.18;
       o.frequency.value = f;
       g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.18, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
@@ -259,11 +259,12 @@ $('#start').onclick = () => {
 $('#pause').onclick = () => { paused ? restartTimer() : (restartTimer(60), paused = true); renderHome(); };
 
 let tick = null, spent = new Map();
+const PREP_SECS = 5;
 function runSession() {
   const plan = routine.flatMap(ex => ex.sides
     ? [{ ex, mirror: false, side: t('side1') }, { ex, mirror: true, side: t('side2') }]
     : [{ ex, mirror: false, side: '' }]);
-  let i = 0, left = 0, holding = false;
+  let i = 0, left = 0, prep = 0, holding = false;
   spent = new Map(routine.map(e => [e, 0]));
   $('#dots').innerHTML = routine.map(() => '<i></i>').join('');
   const load = () => {
@@ -277,17 +278,20 @@ function runSession() {
     const idx = routine.indexOf(ex);
     $('#dots').querySelectorAll('i').forEach((d, j) => d.classList.toggle('on', j <= idx));
     $('#next').textContent = t(i === plan.length - 1 ? 'finish' : 'next');
-    left = ex.secs; holding = false; $('#hold').textContent = t('pause');
+    left = ex.secs; prep = PREP_SECS; holding = false; $('#hold').textContent = t('pause');
     paint();
   };
+  // Antes de cada estiramiento hay unos segundos para cambiar de postura (de pie → piso, etc.).
   const paint = () => {
-    $('#count-num').textContent = left;
-    $('#count-bar').style.width = `${(1 - left / plan[i].ex.secs) * 100}%`;
+    $('.count').classList.toggle('prep', prep > 0);
+    $('#count-num').textContent = prep > 0 ? t('get_ready', prep) : left;
+    $('#count-bar').style.width = prep > 0 ? '0%' : `${(1 - left / plan[i].ex.secs) * 100}%`;
   };
   const next = () => { i++; i < plan.length ? load() : finish(true); };
   clearInterval(tick);
   tick = setInterval(() => {
     if (holding || screen !== 'session') return;
+    if (prep > 0) { if (--prep === 0) chime([880]); paint(); return; }
     left--; paint();
     spent.set(plan[i].ex, spent.get(plan[i].ex) + 1);
     if (left <= 0) { chime(); next(); }
