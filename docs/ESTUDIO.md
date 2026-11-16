@@ -1,6 +1,6 @@
 # Estudio del proyecto
 
-Este documento resume la investigación y las decisiones detrás de Estira, del 14 de noviembre de 2026.
+Este documento resume la investigación y las decisiones detrás de Reed, del 14 de noviembre de 2026.
 
 ## 1. El problema
 
@@ -10,7 +10,7 @@ Quien trabaja todo el día en la computadora pasa horas en la misma postura. Lo 
 - **Estiramientos suaves.** Llegar a una tensión leve, sin dolor ni rebotes, y mantenerla de 15 a 30 segundos.
 - **Descanso visual.** La regla 20-20-20: cada 20 minutos, mirar algo a unos 6 metros (20 pies) durante 20 segundos.
 
-El obstáculo no es saber qué hacer, sino acordarse. Por eso Estira es, ante todo, una alarma con instrucciones claras.
+El obstáculo no es saber qué hacer, sino acordarse. Por eso Reed es, ante todo, una alarma con instrucciones claras.
 
 ## 2. Alternativas que ya existen
 
@@ -21,7 +21,7 @@ El obstáculo no es saber qué hacer, sino acordarse. Por eso Estira es, ante to
 | EyeLeo | Buen descanso visual | Se centra en los ojos |
 | Apps del celular | Rutinas completas | Están en otro dispositivo y no saben que llevas 2 horas en la computadora |
 
-**Qué aporta Estira:** estiramientos ilustrados, elegidos según el espacio y los objetos que tienes, en español y con un instalador ligero.
+**Qué aporta Reed:** estiramientos ilustrados, elegidos según el espacio y los objetos que tienes, en español y con un instalador ligero.
 
 ## 3. Decisiones técnicas
 
@@ -66,7 +66,7 @@ Límite: en 2D no se ve bien la rotación del tronco. El giro sentado se insinú
 
 - La ventana aparece encima de todo y suena un tono generado por código, sin archivos de audio.
 - El temporizador corre en la interfaz. Con la ventana oculta, WebView2 puede retrasar los temporizadores hasta un minuto, lo cual no importa en pausas de 30 a 90 minutos.
-- Una sola instancia: abrir Estira dos veces solo muestra la ventana.
+- Una sola instancia: abrir Reed dos veces solo muestra la ventana.
 - Al iniciar con Windows arranca minimizada en la bandeja.
 
 ## 4. El cuestionario
@@ -92,9 +92,9 @@ Para elegir la rutina, cada estiramiento posible recibe un peso: más si trabaja
 
 ## 6. Nombre
 
-La carpeta se llama "Estiramientos", pero propongo **Estira**: es corto, fácil de recordar, es una invitación ("¡estira!") y no lleva tildes que compliquen nombres de archivo o del repositorio.
+La app se llamó **Estira** hasta la v0.5 (una invitación: "¡estira!"). Desde la v0.6.0 se llama **Reed**, en honor a Reed Richards, el personaje que se estira. Es corto, se pronuncia igual en inglés y español y no lleva tildes. El repositorio y el identificador interno (`org.estira.desktop`) se mantienen para no perder las actualizaciones ni el historial guardado.
 
-Otras opciones: *Pausa Activa* (el término que se usa en Colombia y México para estas pausas en el trabajo), *Desentume* o *Respiro*.
+Otras opciones que se consideraron: *Pausa Activa* (el término que se usa en Colombia y México para estas pausas en el trabajo), *Desentume* o *Respiro*.
 
 ## 7. Próximos pasos
 
@@ -106,4 +106,4 @@ Otras opciones: *Pausa Activa* (el término que se usa en Colombia y México par
 | Media | Horario laboral (no recordar de noche ni el fin de semana) | Menos interrupciones innecesarias |
 | Media | Versión en inglés | Más alcance en GitHub |
 | Baja | Historial semanal | Motivación |
-| Baja | Versiones para Mac y Linux | Tauri ya lo permite; falta probar y compilar |
+| Hecho (v0.6.0) | Versión para Mac (Linux pendiente) | En Mac aún falta detectar llamadas y pantalla completa |

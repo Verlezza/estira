@@ -1,6 +1,6 @@
 {
   "name": "estira",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "private": true,
   "description": "Recordatorios de pausas activas con estiramientos guiados para quienes pasan el día frente a la computadora.",
   "license": "MIT",

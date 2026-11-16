@@ -113,7 +113,21 @@ mod win {
     }
 }
 
-#[cfg(not(windows))]
+#[cfg(target_os = "macos")]
+mod win {
+    /// macOS guarda en HIDIdleTime los nanosegundos sin usar el mouse ni el teclado.
+    pub fn idle_secs() -> u64 {
+        std::process::Command::new("ioreg").args(["-c", "IOHIDSystem"]).output().ok()
+            .and_then(|o| String::from_utf8(o.stdout).ok())
+            .and_then(|s| s.lines().find_map(|l| l.split("\"HIDIdleTime\" = ").nth(1)?.trim().parse::<u64>().ok()))
+            .map_or(0, |ns| ns / 1_000_000_000)
+    }
+    // ponytail: en Mac aún no se detectan llamadas ni pantalla completa; haría falta CoreAudio/CGWindowList.
+    pub fn fullscreen() -> bool { false }
+    pub fn in_use(_: &str) -> bool { false }
+}
+
+#[cfg(not(any(windows, target_os = "macos")))]
 mod win {
     pub fn idle_secs() -> u64 { 0 }
     pub fn fullscreen() -> bool { false }
@@ -128,7 +142,7 @@ async fn check_update(app: AppHandle) -> Option<String> {
     app.updater().ok()?.check().await.ok()?.map(|u| u.version)
 }
 
-/// Descarga e instala la versión nueva; el instalador cierra y vuelve a abrir Estira.
+/// Descarga e instala la versión nueva; el instalador cierra y vuelve a abrir Reed.
 #[tauri::command]
 async fn install_update(app: AppHandle) -> Result<(), String> {
     let update = app.updater().map_err(|e| e.to_string())?.check().await.map_err(|e| e.to_string())?;
@@ -154,7 +168,7 @@ async fn nudge(app: AppHandle, show: bool) -> Result<(), String> {
     }
     let (w, h, margin) = (300.0, 64.0, 12.0);
     let mut builder = WebviewWindowBuilder::new(&app, "nudge", WebviewUrl::App("nudge.html".into()))
-        .title("Estira")
+        .title("Reed")
         .inner_size(w, h)
         .decorations(false)
         .resizable(false)
@@ -223,20 +237,20 @@ fn tray_labels(tray: State<Tray>, open: String, now: String, quit: String) {
 
 fn main() {
     tauri::Builder::default()
-        // Una sola instancia: abrir Estira otra vez solo muestra la ventana.
+        // Una sola instancia: abrir Reed otra vez solo muestra la ventana.
         .plugin(tauri_plugin_single_instance::init(|app, _, _| show(app)))
         .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec!["--minimized"])))
         .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![status, check_update, install_update, tray_labels, nudge, nudge_action])
         .setup(|app| {
-            let open = MenuItem::with_id(app, "open", "Open Estira", true, None::<&str>)?;
+            let open = MenuItem::with_id(app, "open", "Open Reed", true, None::<&str>)?;
             let now = MenuItem::with_id(app, "now", "Stretch now", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&open, &now, &quit])?;
             app.manage(Tray(open, now, quit));
             TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
-                .tooltip("Estira")
+                .tooltip("Reed")
                 .menu(&menu)
                 .show_menu_on_left_click(false)
                 .on_menu_event(|app, e| match e.id.as_ref() {
@@ -258,7 +272,7 @@ fn main() {
             if !std::env::args().any(|a| a == "--minimized") {
                 show(app.handle());
             }
-            // Para probar el aviso pequeño sin estar en una llamada: estira.exe --test-nudge (aparece a los 8 s).
+            // Para probar el aviso pequeño sin estar en una llamada: Reed.exe --test-nudge (aparece a los 8 s).
             if std::env::args().any(|a| a == "--test-nudge") {
                 let h = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
@@ -275,8 +289,15 @@ fn main() {
                 let _ = w.hide();
             }
         })
-        .run(tauri::generate_context!())
-        .expect("no se pudo iniciar Estira");
+        .build(tauri::generate_context!())
+        .expect("no se pudo iniciar Reed")
+        .run(|_app, _e| {
+            // En Mac, hacer clic en el ícono del Dock vuelve a mostrar la ventana escondida.
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Reopen { .. } = _e {
+                show(_app);
+            }
+        });
 }
 
 #[cfg(test)]

@@ -1,8 +1,8 @@
-# Estira
+# Reed
 
 [English](README.md) · **Español**
 
-Estira es una aplicación de escritorio, libre y gratuita, que te recuerda hacer pausas mientras trabajas en la computadora. En cada pausa te guía con estiramientos cortos e ilustrados.
+Reed es una aplicación de escritorio, libre y gratuita, que te recuerda hacer pausas mientras trabajas en la computadora. En cada pausa te guía con estiramientos cortos e ilustrados.
 
 No es una app de ejercicio. Sirve para que quienes pasan el día frente a la pantalla se muevan un poco cada cierto tiempo y eviten molestias en el cuello, la espalda y las muñecas.
 
@@ -10,25 +10,34 @@ No es una app de ejercicio. Sirve para que quienes pasan el día frente a la pan
 
 - **Cuestionario inicial.** Pregunta cuánto espacio tienes, si puedes usar el piso, qué tienes a mano (silla firme, escritorio, pared, toalla, pelota) y dónde sientes tensión. Con eso elige los estiramientos que puedes hacer.
 - **Recordatorios.** Cada 30, 45, 60 o 90 minutos la ventana aparece encima de todo con un sonido suave. Puedes empezar, posponer 10 minutos o saltar esa pausa.
-- **Pausas guiadas.** De 2 a 6 estiramientos con pasos y cuenta regresiva. Cada ilustración muestra la pose inicial en tenue, la final en sólido, una flecha con el movimiento y, en naranja, la zona que se estira. También indica si hay que mantener la posición o repetir el movimiento. Los que se hacen de los dos lados se muestran reflejados.
+- **Pausas guiadas.** De 2 a 6 estiramientos con pasos y cuenta regresiva, con 5 segundos antes de cada uno para acomodarte. Cada ilustración muestra la pose inicial en tenue, la final en sólido, una flecha con el movimiento y, en naranja, la zona que se estira. También indica si hay que mantener la posición o repetir el movimiento. Los que se hacen de los dos lados se muestran reflejados.
 - **Variedad.** Si tienes espacio, las pausas alternan estiramientos en silla y de pie, evitan trabajar la misma zona dos veces seguidas y dejan los de piso para el final.
 - **Resumen.** Una pantalla con tus pausas hechas, el porcentaje a tiempo, las saltadas y pospuestas, los estiramientos hechos y sin hacer, el tiempo frente a la pantalla, el tiempo fuera, tu racha y un gráfico por día (hoy, 7 o 30 días). Todo se guarda solo en tu computadora.
 - **36 estiramientos** para cuello, hombros, espalda alta y baja, muñecas, cadera y piernas, y ojos (regla 20-20-20).
 - **Modo discreto.** Si trabajas en una oficina compartida, prioriza los estiramientos que no llaman la atención.
-- **Sabe cuándo no estás o estás ocupado.** Si llevas 5 minutos sin usar el mouse ni el teclado (o con la pantalla bloqueada), el contador vuelve a empezar: ya te moviste. Durante una llamada (micrófono o cámara en uso), jugando en pantalla completa o presentando, no abre la ventana: aparece un aviso pequeño en la esquina, encima de todo pero sin quitarte el foco, que se cierra solo a los 25 segundos. Se repite cada 15 minutos mientras sigas ocupado. Para verlo, ejecuta `estira.exe --test-nudge`.
-- **Actualizaciones automáticas.** Cuando se publica una versión nueva, Estira ofrece instalarla.
-- **Bandeja del sistema.** Al cerrar la ventana, Estira sigue en la bandeja. Puede abrirse sola al iniciar Windows.
-- **Español e inglés.** Usa el idioma de Windows (inglés si no es español) y se puede cambiar en Ajustes.
-- **Ligera.** Usa el WebView2 que ya trae Windows: el instalador pesa menos de 2 MB.
+- **Sabe cuándo no estás o estás ocupado.** Si llevas 5 minutos sin usar el mouse ni el teclado (o con la pantalla bloqueada), el contador vuelve a empezar: ya te moviste. Durante una llamada (micrófono o cámara en uso), jugando en pantalla completa o presentando, no abre la ventana: aparece un aviso pequeño en la esquina, encima de todo pero sin quitarte el foco, que se cierra solo a los 25 segundos. Se repite cada 15 minutos mientras sigas ocupado. Para verlo, ejecuta `Reed.exe --test-nudge`. En Mac detecta cuando no estás, pero todavía no las llamadas ni la pantalla completa.
+- **Actualizaciones automáticas.** Cuando se publica una versión nueva, Reed ofrece instalarla.
+- **Bandeja del sistema.** Al cerrar la ventana, Reed sigue en la bandeja. Puede abrirse sola al iniciar sesión.
+- **Español e inglés.** Usa el idioma del sistema (inglés si no es español) y se puede cambiar en Ajustes.
+- **Ligera.** Usa el navegador interno que ya traen Windows (WebView2) y macOS: el instalador pesa pocos MB.
 
 Las ilustraciones no son archivos de imagen: una figura se dibuja con código a partir de ángulos de articulaciones (ver [`src/figure.js`](src/figure.js)).
 
 ## Instalar
 
-1. Descarga el instalador desde la [última versión](https://github.com/Verlezza/estira/releases/latest): es el archivo `Estira_x.y.z_x64-setup.exe`.
-2. Ábrelo. Se instala solo para tu usuario y no pide permisos de administrador.
+Descárgala desde la [última versión](https://github.com/Verlezza/estira/releases/latest).
 
-Windows puede mostrar el aviso "Windows protegió su PC" porque el instalador aún no está firmado. Haz clic en **Más información → Ejecutar de todas formas**.
+**Windows**
+
+1. Descarga `Reed_x.y.z_x64-setup.exe` y ábrelo. Se instala solo para tu usuario y no pide permisos de administrador.
+2. Windows puede mostrar el aviso "Windows protegió su PC" porque el instalador aún no está firmado. Haz clic en **Más información → Ejecutar de todas formas**.
+
+**Mac** (macOS 10.15 o más reciente, Apple Silicon o Intel)
+
+1. Descarga `Reed_x.y.z_universal.dmg`, ábrelo y arrastra Reed a Aplicaciones.
+2. La primera vez, macOS dice que no puede verificar la app porque Apple no la ha certificado. Ve a **Ajustes del Sistema → Privacidad y seguridad** y haz clic en **Abrir igualmente**.
+
+Si usabas Estira (el nombre anterior, hasta la v0.5), ciérrala desde la bandeja y desinstálala antes de instalar Reed, sin marcar "borrar los datos de la app": Reed conserva tu historial.
 
 ## Desarrollo
 
@@ -77,7 +86,7 @@ Antes de proponer uno nuevo, comprueba que sea un estiramiento suave, seguro par
 
 ## Aviso
 
-Estira no da consejo médico. Si tienes una lesión, dolor fuerte, hormigueo o una condición médica, consulta a un profesional de la salud antes de hacer estiramientos.
+Reed no da consejo médico. Si tienes una lesión, dolor fuerte, hormigueo o una condición médica, consulta a un profesional de la salud antes de hacer estiramientos.
 
 ## Licencia
 
