@@ -101,7 +101,7 @@ function pickRoutine(p) {
     return { e, w };
   });
   // Con espacio para ponerse de pie, se alterna: uno en la silla, uno de pie (o en el piso).
-  const up = x => x.e.pos !== 'sit';
+  const up = x => !x.e.scene.startsWith('sit');
   const alternate = p.space !== 'sit' && pool.some(up) && pool.some(x => !up(x));
   let wantUp = Math.random() < 0.5;
   const out = [];
@@ -116,8 +116,11 @@ function pickRoutine(p) {
     pool.splice(pool.indexOf(cand[i]), 1);
     wantUp = !wantUp;
   }
-  // Los de piso van juntos al final: bajar al suelo y volver a subir una sola vez.
-  out.sort((x, y) => !!x.floor - !!y.floor);
+  // Se ordenan por postura para cambiar de posición lo menos posible: primero sentado, luego de pie
+  // (juntos los que usan el mismo apoyo: pared, escritorio o silla) y al final los de piso.
+  // La postura real sale de la escena (pos es el espacio que necesita: cadera-silla cabe junto a la silla, pero es de pie).
+  const group = e => (e.scene.startsWith('floor') ? 2 : e.scene.startsWith('sit') ? 0 : 1);
+  out.sort((x, y) => group(x) - group(y) || (x.needs[0] || '').localeCompare(y.needs[0] || ''));
   store.set('recent', out.map(e => e.id));
   return out;
 }

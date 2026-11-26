@@ -11,7 +11,7 @@ It is not a workout app. It helps people who spend all day in front of a screen 
 - **Setup questionnaire.** Asks how much space you have, whether you can use the floor, what you have at hand (sturdy chair, desk, wall, towel, ball) and where you feel tension. It uses your answers to pick the stretches you can do.
 - **Reminders.** Every 30, 45, 60 or 90 minutes the window pops up on top with a soft chime. You can start, snooze for 10 minutes or skip that break.
 - **Guided breaks.** 2 to 6 stretches with steps and a countdown, with 5 seconds before each one to get into position. Each illustration shows the start pose faded, the end pose solid, an arrow with the movement and, in orange, the area being stretched. It also says whether to hold the position or repeat the movement. Stretches done on both sides are mirrored.
-- **Variety.** If you have room, breaks alternate between seated and standing stretches, avoid working the same area twice in a row, and leave floor stretches for the end.
+- **Variety and order.** If you have room, each break mixes seated and standing stretches, but groups them so you change position as little as possible: seated first, then standing (those that use the same support together) and floor stretches last.
 - **Summary.** A screen with your breaks done, on-time rate, skipped and snoozed breaks, stretches done and not done, screen time, time away, your streak and a chart per day (today, 7 or 30 days). Everything stays on your computer.
 - **36 stretches** for the neck, shoulders, upper and lower back, wrists, hips and legs, and eyes (20-20-20 rule).
 - **Discreet mode.** If you work in a shared office, it favors stretches that don't draw attention.
